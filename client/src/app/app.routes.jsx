@@ -13,8 +13,8 @@ import OrderSuccess from "../features/cart/pages/OrderSuccess"
 import Orders from "../features/cart/pages/Orders"
 import OrderDetails from "../features/cart/pages/OrderDetails"
 import NotFound from "./NotFound"
-import Profile from "../features/profile/pages/Profile"
-import CreateProfile from "../features/profile/pages/CreateProfile"
+import CreateProfile from "../features/profile/page/CreateProfile"
+import Profile from "../features/profile/page/Profile"
 
 export const router = createBrowserRouter([
   {
@@ -99,15 +99,13 @@ export const router = createBrowserRouter([
       },
       {
         path: "/user/profile",
-        element: (<Protected>
-          <Profile/>
-        </Protected>)
+        element: (
+          <Protected><Profile/></Protected>
+        )
       },
       {
         path: "/create-profile/:userid",
-        element: <Protected>
-          <CreateProfile/>
-        </Protected>
+        element: (<Protected><CreateProfile/></Protected>)
       }
     ],
   },

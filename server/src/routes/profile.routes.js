@@ -1,6 +1,5 @@
 import express from "express"
 import { authMiddleware } from "../middlewares/user.middleware.js"
-import { profileValidator } from "../validators/profile.validator.js"
 import {addProfileDetailController, getProfileDetailController} from "../controllers/profile.controller.js"
 
 const router = express.Router()
@@ -10,9 +9,12 @@ const router = express.Router()
  * @Api -> /api/profile/add-detail/:userid
  */
 
+router.get("/add-details", (req, res) => {
+  console.log("Hello world")
+})
+
 router.post(
-  "/add-details/:userId",
-  profileValidator,
+  "/add-details/:userid",
   authMiddleware,
   addProfileDetailController,
 );

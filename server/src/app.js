@@ -56,14 +56,4 @@ app.use("/api/cart", cartRoutes)
 
 app.use("/api/profile", profileRoutes)
 
-/**
- * Wildcard route
- */
-
-app.get("*name", (req, res) => {
-  res.sendFile("public/index.html",
-    {root: __dirname}
-  )
-})
-
 export default app;

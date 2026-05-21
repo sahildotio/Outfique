@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-// import { useNavigate } from "react-router";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate, useParams } from "react-router";
 import { useProfile } from "../hooks/useProfile.js";
 
 const CreateProfile = () => {
+  const { userid } = useParams();
+
   const [formData, setFormData] = useState({
     fullName: "",
     contact: "",
@@ -17,8 +20,6 @@ const CreateProfile = () => {
     addressType: "home",
   });
 
-  // const navigate = useNavigate()
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -26,29 +27,38 @@ const CreateProfile = () => {
     });
   };
 
-    const { handleCreateUserProfileDetails } = useProfile();
-
-  const handleSubmit = async(e) => {
+  const { handelCreateUserProfile } = useProfile();
+  const navigate = useNavigate();
+  const handleSubmit = async (e) => {
     e.preventDefault();
-   const data =  await handleCreateUserProfileDetails({
-      fullName: formData.fullName,
-      contact: formData.contact,
-      alternateContact: formData.alternateContact,
-      houseNo: formData.houseNo,
-      street: formData.street,
-      landmark: formData.landmark,
-      city: formData.city,
-      state: formData.state,
-      pincode: formData.pincode,
-      country: formData.country,
-      addressType: formData.addressType,
-    })    
-    
-    if(data) {
-      console.log("Profile Created Successfully");
+
+    try {
+      const data = await handelCreateUserProfile(userid, {
+        fullName: formData.fullName,
+        contact: formData.contact,
+        alternateContact: formData.alternateContact,
+        houseNo: formData.houseNo,
+        street: formData.street,
+        landmark: formData.landmark,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+        country: formData.country,
+        addressType: formData.addressType,
+      });
+
+      if (data) {
+        toast.success("Profile Created Successfully");
+
+        setTimeout(() => {
+          navigate("/user/profile");
+        }, 1200);
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+      console.log(error);
     }
   };
-
   return (
     <div
       className="min-h-screen bg-[#f0ede8] px-6 py-10 md:px-16"
@@ -195,10 +205,10 @@ const CreateProfile = () => {
 
           {/* Button */}
           <div className="flex items-center justify-center ">
-                      <button
-                        //   onClick={() => {
-                        //       navigate("/user/profile")
-                        //   }}
+            <button
+              onClick={() => {
+                navigate("/user/profile");
+              }}
               type="submit"
               className="
             px-10 py-3
