@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 import ContinueWithGoogle from "./ContinueWithGoogle";
@@ -7,7 +7,9 @@ import ContinueWithGoogle from "./ContinueWithGoogle";
 const Right = () => {
   const navigate = useNavigate();
   const { handleRegister } = useAuth();
-
+  useEffect(() => {
+    document.title = "Sign Up - Outfique";
+  })
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",

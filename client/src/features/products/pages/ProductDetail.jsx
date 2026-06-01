@@ -17,8 +17,9 @@ const ProductDetail = () => {
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const { handleGetProductById } = useProduct();
   const { handleAddWishlist } = useWishlist();
+  console.log(handleAddWishlist(productId, product?.variants?.[0]?._id))
   const user = useSelector(state => state.auth.user)
-
+  
   // Fetch product
   useEffect(() => {
     async function fetchProduct() {
@@ -38,7 +39,9 @@ const ProductDetail = () => {
 
     fetchProduct();
   }, [productId]);
-
+  useEffect(() => {
+    document.title = product ? `${product.title} - Outfique` : "Product Detail - Outfique";
+  })
   // Active Variant Logic (from first code)
   const activeVariant = useMemo(() => {
     if (!product?.variants?.length) return null;
@@ -80,6 +83,7 @@ const ProductDetail = () => {
   useEffect(() => {
     setActiveImage(0);
   }, [activeVariant]);
+
 
   // Better attribute change logic from first code
   const handleAttributeChange = (attrName, value) => {
@@ -152,18 +156,19 @@ const ProductDetail = () => {
       variantId: activeVariant._id
     })
     }
-
   const handleWishListCheckOption = () => {
     if (!user) {
       toast.error("Please login first to add to wishlist")
       return
     }
 
-    handleAddToCart({
+    handleAddWishlist({
       productId: product._id,
-      variantId: activeVariant._id
-    })
+      variantId: product?.variants?.[0]?._id,
+    });
   }
+
+
   return (
     <div
       className="min-h-screen bg-[#f0ede8]"

@@ -48,6 +48,9 @@ useEffect(() => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+  document.title = "Premium Minimalist Fashion - Outfique";
+})
 
   return (
     <>

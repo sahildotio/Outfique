@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { Link, useNavigate } from "react-router";
 import ContinueWithGoogle from "./ContinueWithGoogle";
@@ -10,6 +10,10 @@ const Right = () => {
 
   const { handleLogin } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = "Sign In - Outfique";
+  })
 
   const submitHandler = async (e) => {
     e.preventDefault();
