@@ -4,41 +4,37 @@ import configure from "../config/config.js";
 import redis from "../services/redis.service.js";
 
 const authMiddleware = async (req, res, next) => {
-  try {
-    const token = req.cookies.token;
+
+    const accessToken = req.cookies.accessToken;
     
-    if(!token) {
+    if(!accessToken) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized access",
       })
     }
 
-    const isTokenBlackList = await redis.get(token)
+    const isTokenBlackList = await redis.get(accessToken)
 
     if (isTokenBlackList) {
       return res.status(401).json({
         success: false,
-        message: "Internal token"
+        message: "Token is blacklisted, Please login again"
       })
     }
     
-    const decodedToken = jwt.verify(token, configure.JWT_SECRET);
-    const user = await users.findById(decodedToken.id);
-    if (!user) {
+    const decodedToken = jwt.verify(accessToken, configure.ACCESS_TOKEN_SECRET);
+    const user = await users.findById(decodedToken.userid).select("-password -refreshToken");
+
+    if(!user) {
       return res.status(401).json({
         success: false,
-        message: "User not found",
-      });
+        message: "Invalid access token",
+      })
     }
     req.user = user;
     next();
-  }catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: error.message,
-    });
-  }
+
 }
 
 const sellerMiddleware = async (req, res, next) => {

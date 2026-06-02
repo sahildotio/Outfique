@@ -34,6 +34,10 @@ const userSchema = new Schema(
       enum: ["buyer", "seller"],
       default: "buyer",
     },
+    refreshToken: {
+      type: String,
+      required: false,
+    },
     googleId: {
       type: String,
     },

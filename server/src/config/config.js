@@ -10,12 +10,26 @@ if(!process.env.PORT){
     throw new Error("Port is not defined in environment variable")
 }
 
-if (!process.env.JWT_SECRET) {
-  throw new Error("JWT secret is not defined in environment variable")
+if (!process.env.ACCESS_TOKEN_SECRET) {
+  throw new Error("ACCESS_TOKEN_SECRET is not defined in environment variable");
 }
 
-if (!process.env.JWT_EXPIRE) {
-  throw new Error("JWT expire is not defined in environment variable")
+if (!process.env.ACCESS_TOKEN_EXPIRES_IN) {
+  throw new Error(
+    "ACCESS_TOKEN_EXPIRES_IN is not defined in environment variable",
+  );
+}
+
+if (!process.env.REFRESH_TOKEN_SECRET) {
+  throw new Error(
+    "REFRESH_TOKEN_SECRET is not defined in environment variable",
+  );
+}
+
+if (!process.env.REFRESH_TOKEN_EXPIRES_IN) {
+  throw new Error(
+    "REFRESH_TOKEN_EXPIRES_IN is not defined in environment variable",
+  );
 }
 
 if(!process.env.GOOGLE_CLIENT_ID){
@@ -61,8 +75,10 @@ if (!process.env.REDIS_PASSWORD) {
 const configure = {
   PORT: process.env.PORT || 8000,
   MONGO_URI: process.env.MONGO_URI,
-  JWT_SECRET: process.env.JWT_SECRET,
-  JWT_EXPIRE: process.env.JWT_EXPIRE,
+  ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
+  ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
+  REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   NODE_ENV: process.env.NODE_ENV || "development",

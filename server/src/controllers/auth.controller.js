@@ -1,22 +1,11 @@
-import users from "../models/user.models.js";
-import jwt from "jsonwebtoken";
 import configure from "../config/config.js";
-import products from "../models/product.models.js";
+import users from "../models/user.models.js";
 import redis from "../services/redis.service.js";
-
-const sendTokenResponse = async(user, res) => {
-  const token = jwt.sign({ id: user._id }, configure.JWT_SECRET, {
-    expiresIn: configure.JWT_EXPIRE,
-  });
-
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-  });
-
-  return token;
-}
+import jwt from "jsonwebtoken";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/generateToken.js";
 
 /**
  * @Register Controller
@@ -44,17 +33,39 @@ const userRegisterController = async (req, res) => {
       role: isSeller ? "seller" : "buyer",
     });
 
-    await sendTokenResponse(user, res);
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    const createUser = await users
+      .findById(user._id)
+      .select("-password -otp -otpExpiry -refreshToken");
+    if (!createUser) {
+      return res.status(500).json({
+        success: false,
+        message: "User registration failed",
+      });
+    }
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: configure.NODE_ENV === "production" ? true : false,
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: configure.NODE_ENV === "production" ? true : false,
+      sameSite: "lax",
+      maxAge: 15 * 24 * 60 * 60 * 1000,
+    });
 
     return res.status(201).json({
       message: "User registered successfully",
-      user: {
-        _id: user._id,
-        email: user.email,
-        contact: user.contact,
-        fullName: user.fullName,
-        role: user.role,
-      },
+      user: createUser,
     });
   } catch (error) {
     return res.status(500).json({
@@ -62,7 +73,6 @@ const userRegisterController = async (req, res) => {
       error: error.message,
     });
   }
-
 };
 
 /**
@@ -70,36 +80,57 @@ const userRegisterController = async (req, res) => {
  */
 
 const userLoginController = async (req, res) => {
-
   try {
     const { email, password } = req.body;
 
-    const user = await users.findOne({email})
+    const user = await users.findOne({ email });
     if (!user) {
       return res.status(400).json({
-        message: "Invalid email and password"
-      })
+        message: "Invalid email and password",
+      });
     }
 
-    const isMatch = await user.comparePassword(password)
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({
-        message: "Invalid email or password"
-      })
+        message: "Invalid email or password",
+      });
     }
 
-    await sendTokenResponse(user, res)
-    
+    const loginUser = await users
+      .findById(user._id)
+      .select("-password -otp -otpExpiry -refreshToken");
+
+    if (!loginUser) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: configure.NODE_ENV === "production" ? true : false,
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: configure.NODE_ENV === "production" ? true : false,
+      sameSite: "lax",
+      maxAge: 15 * 24 * 60 * 60 * 1000,
+    });
+
     return res.status(200).json({
       message: "User logged in successfully",
-      user: {
-        _id: user._id,
-        email: user.email,
-        contact: user.contact,
-        fullName: user.fullName,
-        role: user.role,
-      },
-    })
+      user: loginUser,
+    });
   } catch (error) {
     return res.status(500).json({
       message: "Internal server error",
@@ -126,11 +157,31 @@ const googleSuccessController = async (req, res) => {
     });
   }
 
-  const token = jwt.sign({ id: user._id }, configure.JWT_SECRET, {
-    expiresIn: configure.JWT_EXPIRE,
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+
+  const createUser = await users.findById(user._id).select("-refreshToken");
+
+  if (!createUser) {
+    return res.status(500).json({
+      success: false,
+      message: "User registration failed",
+    });
+  }
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: configure.NODE_ENV === "production" ? true : false,
+    sameSite: "lax",
+    maxAge: 15 * 60 * 1000,
   });
 
-  res.cookie("token", token);
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: configure.NODE_ENV === "production" ? true : false,
+    sameSite: "lax",
+    maxAge: 15 * 24 * 60 * 60 * 1000,
+  });
   res.redirect("http://localhost:5173/");
 };
 
@@ -140,7 +191,7 @@ const googleSuccessController = async (req, res) => {
 
 const getMeController = async (req, res) => {
   try {
-    const user = req.user
+    const user = req.user;
     return res.status(200).json({
       success: true,
       user: {
@@ -148,17 +199,17 @@ const getMeController = async (req, res) => {
         email: user.email,
         fullname: user.fullName,
         contact: user.contact,
-        role: user.role
+        role: user.role,
       },
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 /**
  * @Logout controller
@@ -166,24 +217,46 @@ const getMeController = async (req, res) => {
 
 const logoutController = async (req, res) => {
   try {
-    const token = req.cookies.token
-    res.clearCookie("token")
-    await redis.set(token, Date.now().toString(), "EX", 60*60)
+    const accessToken = req.cookies.accessToken;
+
+    if (!accessToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Access token not found",
+      });
+    }
+
+    const decodeAccessToken = jwt.decode(accessToken)
+
+    if (decodeAccessToken) {
+      const expiresIn = decodeAccessToken.exp - Math.floor(Date.now() / 1000)
+      await redis.sadd(`blacklisted:${decodeAccessToken.userid}`, accessToken)
+      await redis.expire(
+        `blacklisted:${decodeAccessToken.userid}`, expiresIn
+      )
+    }
+
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
 
     return res.status(200).json({
       success: true,
-      message: "User logout successfully"
-    })
+      message: "User logged out successfully",
+    });
+
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message
-    }
-    )
-  } 
-}
+      error: error.message,
+    });
+  }
+};
 
 export {
-  userRegisterController, userLoginController, googleSuccessController, getMeController, logoutController
+  getMeController,
+  googleSuccessController,
+  logoutController,
+  userLoginController,
+  userRegisterController,
 };

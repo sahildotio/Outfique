@@ -167,7 +167,7 @@ const ProductDetail = () => {
       variantId: product?.variants?.[0]?._id,
     });
   }
-
+5
 
   return (
     <div
