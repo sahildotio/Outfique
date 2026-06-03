@@ -1,16 +1,15 @@
+import jwt from "jsonwebtoken";
 import configure from "../config/config.js";
 import users from "../models/user.models.js";
 import redis from "../services/redis.service.js";
-import jwt from "jsonwebtoken";
+import { sendMail } from "../services/sendMail.service.js";
+import { generateOTP } from "../utils/generateOTP.js";
 import {
   generateAccessToken,
   generateMfaToken,
   generateRefreshToken,
 } from "../utils/generateToken.js";
-import { sendMail } from "../services/sendMail.service.js";
 import { sendMailHtml } from "../utils/sendMailHtml.js";
-import crypto from "crypto"
-import { generateOTP } from "../utils/generateOTP.js";
 
 /**
  * @Register Controller
@@ -31,28 +30,30 @@ const userRegisterController = async (req, res) => {
     }
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
-    const hashedOTP = crypto.createHash("sha256").update(otp).digest("hex");
+
     const user = await users.create({
       email,
       contact,
       password,
       fullName,
       role: isSeller ? "seller" : "buyer",
-      otp: hashedOTP,
-      otpExpiry
+      otp,
+      otpExpiry,
     });
 
+    console.log("Generating OTP", otp);
 
     await sendMail({
       to: user.email,
       subject: "Verify Your Outfique Account",
-      html: sendMailHtml
+      html: sendMailHtml,
     });
 
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
-    const mfaToken = generateMfaToken(user._id)
-
+    const mfaToken = generateMfaToken(user._id);
+    console.log("Generated OTP:", otp);
+    console.log("User ID:", user._id);
     const createUser = await users
       .findById(user._id)
       .select("-password -otp -otpExpiry -refreshToken -mfaToken");
@@ -63,11 +64,11 @@ const userRegisterController = async (req, res) => {
       });
     }
 
-    user.otp = hashedOTP
-    user.otpExpiry = otpExpiry
+    user.otp;
+    user.otpExpiry = otpExpiry;
     user.refreshToken = refreshToken;
-    user.mfaToken = mfaToken
-  
+    user.mfaToken = mfaToken;
+
     await user.save({ validateBeforeSave: false });
 
     res.cookie("accessToken", accessToken, {
@@ -89,7 +90,7 @@ const userRegisterController = async (req, res) => {
       secure: configure.NODE_ENV === "production" ? true : false,
       sameSite: "lax",
       maxAge: 5 * 60 * 1000,
-    })
+    });
 
     return res.status(201).json({
       message: "User registered successfully",
@@ -187,7 +188,7 @@ const googleSuccessController = async (req, res) => {
 
   const accessToken = generateAccessToken(user._id);
   const refreshToken = generateRefreshToken(user._id);
-  const mfaToken = generate
+  const mfaToken = generate;
 
   const createUser = await users.findById(user._id).select("-refreshToken");
 
@@ -255,14 +256,12 @@ const logoutController = async (req, res) => {
       });
     }
 
-    const decodeAccessToken = jwt.decode(accessToken)
+    const decodeAccessToken = jwt.decode(accessToken);
 
     if (decodeAccessToken) {
-      const expiresIn = decodeAccessToken.exp - Math.floor(Date.now() / 1000)
-      await redis.sadd(`blacklisted:${decodeAccessToken.userid}`, accessToken)
-      await redis.expire(
-        `blacklisted:${decodeAccessToken.userid}`, expiresIn
-      )
+      const expiresIn = decodeAccessToken.exp - Math.floor(Date.now() / 1000);
+      await redis.sadd(`blacklisted:${decodeAccessToken.userid}`, accessToken);
+      await redis.expire(`blacklisted:${decodeAccessToken.userid}`, expiresIn);
     }
 
     res.clearCookie("accessToken");
@@ -272,7 +271,6 @@ const logoutController = async (req, res) => {
       success: true,
       message: "User logged out successfully",
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -283,15 +281,55 @@ const logoutController = async (req, res) => {
 };
 
 const verifyEmailController = async (req, res) => {
-  try {
-    
-  } catch (error) {
-    return res.status(500).json({
+  const { otp } = req.body;
+  const mfaToken = req.cookies?.mfaToken;
+
+  const decodeMfaToken = jwt.verify(mfaToken, configure.MFA_TOKEN_SECRET);
+  const user = await users.findById(decodeMfaToken.userid);
+
+  if (!mfaToken) {
+    return res.status(401).json({
       success: false,
-      message: "Internal server error"
+      message: "Unauthorized request"
     })
   }
-}
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found"
+    })
+  }
+  if (!user.otpExpiry || user.otpExpiry < new Date()) {
+    return res.status(400).json({
+      success: false,
+      message: "OTP has been expired",
+    });
+  }
+
+  const isOtpMatch = await user.compareOTP(otp);
+
+  if(!isOtpMatch) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid OTP"
+    })
+  }
+
+
+  user.isVerify = true
+  user.otp = undefined
+  user.otpExpiry = undefined
+
+  
+
+  res.clearCookie("mfaToken")
+  await user.save();
+  return res.status(200).json({
+    success: true,
+    message: "Email verified successfully"
+  })
+};
 
 export {
   getMeController,

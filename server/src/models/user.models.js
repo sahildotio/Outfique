@@ -1,5 +1,5 @@
-import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
+import mongoose, { Schema } from "mongoose";
 
 const userSchema = new Schema(
   {
@@ -39,16 +39,16 @@ const userSchema = new Schema(
       required: false,
     },
     otp: {
-    type: String,
-    required: false,
+      type: String,
+      required: false,
     },
-    isVerify: { 
+    isVerify: {
       type: Boolean,
       default: false,
     },
     otpExpiry: {
       type: Date,
-      index: ({expires: 5 * 60 * 1000})
+      index: { expires: 5 * 60 * 1000 },
     },
     mfaToken: {
       type: String,
@@ -63,17 +63,24 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("save", async function () {
-  try {
-    if (!this.isModified("password")) return;
-
-    this.password = await bcrypt.hash(this.password, 10);
-  } catch (error) {
-    next(error);
-  }
+  if (!this.isModified("password")) return;
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
 userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
+};
+
+userSchema.pre("save", async function () {
+  if (!this.isModified("otp") || !this.otp) {
+    return;
+  }
+
+  this.otp = await bcrypt.hash(this.otp, 10);
+});
+
+userSchema.methods.compareOTP = async function (otp) {
+  return await bcrypt.compare(otp, this.otp);
 };
 
 const users = mongoose.model("user", userSchema);

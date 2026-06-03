@@ -9,7 +9,7 @@ import configure from "./config/config.js";
 import productRoutes from "./routes/product.route.js"
 import cartRoutes from "./routes/cart.routes.js"
 import profileRoutes from "./routes/profile.routes.js"
-  import wishlistRoutes from "./routes/wishlist.routes.js"
+import wishlistRoutes from "./routes/wishlist.routes.js"
 
 const app = express();
 
