@@ -4,7 +4,6 @@ import productReducer from "../features/products/state/product.slice.js"
 import cartReducers from "../features/cart/state/cart.slice.js"
 import profileReducer from "../features/profile/state/profile.slice.js";
 import wishlistReducer from "../features/wishlist/state/wishlist.state.js"
-import themeReducer from "../features/theme/state/theme.slice.js"
 
 export const store = configureStore({
     reducer: {
@@ -13,6 +12,5 @@ export const store = configureStore({
         cart: cartReducers,
         profile: profileReducer,
         wishlist: wishlistReducer,
-        theme: themeReducer
     }
 })

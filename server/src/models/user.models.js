@@ -42,16 +42,9 @@ const userSchema = new Schema(
       type: String,
       required: false,
     },
-    isVerify: {
-      type: Boolean,
-      default: false,
-    },
     otpExpiry: {
       type: Date,
       index: { expires: 5 * 60 * 1000 },
-    },
-    mfaToken: {
-      type: String,
     },
     googleId: {
       type: String,
@@ -69,18 +62,6 @@ userSchema.pre("save", async function () {
 
 userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
-};
-
-userSchema.pre("save", async function () {
-  if (!this.isModified("otp") || !this.otp) {
-    return;
-  }
-
-  this.otp = await bcrypt.hash(this.otp, 10);
-});
-
-userSchema.methods.compareOTP = async function (otp) {
-  return await bcrypt.compare(otp, this.otp);
 };
 
 const users = mongoose.model("user", userSchema);

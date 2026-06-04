@@ -39,16 +39,21 @@ const authMiddleware = async (req, res, next) => {
 
 const sellerMiddleware = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
-    if (!token) {
+    const accessToken = req.cookies?.accessToken
+
+    if (!accessToken) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized access",
       });
     }
-    const decodedToken = jwt.verify(token, configure.JWT_SECRET);
+    const decodedToken = jwt.verify(
+      accessToken,
+      configure.ACCESS_TOKEN_SECRET,
+    );
     
-    const user = await users.findById(decodedToken.id);
+    const user = await users.findById(decodedToken.userid);
+
     if (!user) {
       return res.status(401).json({
         success: false,

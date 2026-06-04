@@ -10,6 +10,7 @@ import productRoutes from "./routes/product.route.js"
 import cartRoutes from "./routes/cart.routes.js"
 import profileRoutes from "./routes/profile.routes.js"
 import wishlistRoutes from "./routes/wishlist.routes.js"
+import categoryRoutes from "./routes/category.routes.js"
 
 const app = express();
 
@@ -61,5 +62,10 @@ app.use("/api/profile", profileRoutes)
  * @wishlistRoutes
  */
 app.use("/api/wishlist", wishlistRoutes)
+/**
+ * @CategoryRoutes
+ */
+
+app.use("/api/category", categoryRoutes)
 
 export default app;

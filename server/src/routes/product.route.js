@@ -7,6 +7,7 @@ import {
   getProductByIdController,
   addProductVariantController,
   getSearchController,
+  getProductByCategoryController,
 } from "../controllers/product.controller.js";
 import multer from "multer"
 import { createProductValidator } from "../validators/product.validator.js"
@@ -61,5 +62,12 @@ router.post(
   upload.array("productImages", 7),
   addProductVariantController,
 );
+
+/**
+ * @GET method
+ * @Desc => Get product by category 
+ */
+
+router.get("/category/:slug", getProductByCategoryController)
 
 export default router
