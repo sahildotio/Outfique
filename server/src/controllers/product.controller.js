@@ -3,7 +3,7 @@ import products from "../models/product.models.js";
 import { uploadImage } from "../services/storage.service.js";
 
 const createProductController = async (req, res) => {
-  try {
+  
     const { title, description, amount, currency, category } = req.body;
     const seller = req.user;
     const images = await Promise.all(
@@ -33,12 +33,7 @@ const createProductController = async (req, res) => {
       message: "Product created successfully",
       data: product,
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
+
 };
 
 /**
@@ -265,43 +260,12 @@ const getSearchController = async (req, res) => {
   }
 };
 
-const getAllProductByCategoryController = async (req, res) => {
-  try {
-    const { slug } = req.params
-    const category = await categories.findOne({slug})
-    if(!category) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
-
-    const productLists = await products.find({ category: category._id })
-    
-    return res.status(200).json({
-      success: true,
-      category: {
-        _id: category._id,
-        name: category.name,
-        slug: category.slug
-      },
-      totalList: productLists.length,
-      products: productLists
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 
 export {
   addProductVariantController,
   createProductController,
   getAllProductsController,
   getAllSellerProductsController,
-  getAllProductByCategoryController,
   getProductByIdController,
   getSearchController,
 };

@@ -59,7 +59,7 @@ const sellerMiddleware = async (req, res, next) => {
        }
        const decode = jwt.verify(refreshToken, configure.REFRESH_TOKEN_SECRET)
        const user = await users.findById(decode.userid)
-       if (user) {
+       if (!user) {
          return res.status(401).json({
            success: false,
            message: "User not found"

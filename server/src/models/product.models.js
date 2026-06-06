@@ -48,7 +48,7 @@ const productSchema = new Schema(
 
 
 productSchema.pre("save", function () {
-  if (this.isModified("productSlug")) {
+  if (this.isModified("title")) {
     this.productSlug = slugify(this.title, {
       strict: true,
       lower: true,
