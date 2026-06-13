@@ -57,6 +57,10 @@ const orderSchema = new mongoose.Schema({
     totalPrice: {
         type: priceSchema,
         required: true
+    },
+    address: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "profile"
     }
 }, {timestamps: true})
 

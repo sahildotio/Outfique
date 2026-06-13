@@ -68,4 +68,5 @@ app.use("/api/wishlist", wishlistRoutes)
 
 app.use("/api/category", categoryRoutes)
 
+
 export default app;

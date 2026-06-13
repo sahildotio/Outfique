@@ -5,9 +5,11 @@ import {
   getProductById,
   getSellerAllProducts,
   addProductVariant,
-  searchProducts
+  searchProducts,
+  createCategory,
+  getAllCategory
 } from "../service/product.api";
-import { setAllProducts, setSearchResult, setSellerProducts } from "../state/product.slice";
+import { setAllProducts, setCategory, setSearchResult, setSellerProducts } from "../state/product.slice";
 
 export const useProduct = () => {
   const dispatch = useDispatch();
@@ -20,6 +22,11 @@ export const useProduct = () => {
       throw error.message;
     }
   };
+
+  const handleCreateCategory = async (formData) => {
+    const data = await createCategory(formData)
+    return data.category
+  }
 
   const handleGetSellerProduct = async () => {
     try {
@@ -69,12 +76,20 @@ export const useProduct = () => {
     }
   }
 
+  const handleGetAllCategory = async () => {
+    const data = await getAllCategory()
+    dispatch(setCategory(data.category));
+    return data.category
+  }
+  
   return {
     handleCreateProducts,
     handleGetSellerProduct,
     handleGetAllProducts,
     handleGetProductById,
     handleAddProductVariants,
-    handleSearchProducts
+    handleSearchProducts,
+    handleCreateCategory,
+    handleGetAllCategory
   };
 };

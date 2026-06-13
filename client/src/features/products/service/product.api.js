@@ -69,6 +69,11 @@ export const addProductVariant = async (productId, newProductVariant) => {
   return response.data
 }
 
+export const createCategory = async (formData) => {
+  const response = await categoryApiInstance.post("/", formData)
+  return response.data
+}
+
 export const getAllCategory = async () => {
   const response = await categoryApiInstance.get("/")
   return response.data

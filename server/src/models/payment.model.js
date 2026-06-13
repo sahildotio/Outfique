@@ -21,9 +21,26 @@ const paymentSchema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
-    order: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "order",
+    order: [
+        {
+            title: String,
+            productId: mongoose.Schema.Types.ObjectId,
+            variantId: mongoose.Schema.Types.ObjectId,
+            quantity: Number,
+            productImages: [{ url: String }],
+            price: priceSchema,
+            description: String
+        }
+    ],
+    orderStatus: {
+        type: String,
+        enum: [
+            "Processing",
+            "Packed",
+            "Shipped",
+            "Delivered",
+            "Cancelled"
+        ],
     }
 },{timestamps: true})
 

@@ -345,7 +345,8 @@ const createOrderController = async (req, res) => {
         description: item.productId?.description,
        
      }
-    })
+    }),
+    orderStatus: "Processing"
   })
   
   return res.status(200).json({
