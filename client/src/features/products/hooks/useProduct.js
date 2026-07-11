@@ -8,7 +8,8 @@ import {
   searchProducts,
   createCategory,
   getAllCategory,
-  getProductBySlug
+  getProductBySlug,
+  getProductDetailBySlug
 } from "../service/product.api";
 import { setAllProducts, setCategory, setSearchResult, setSellerProducts } from "../state/product.slice";
 
@@ -58,6 +59,11 @@ export const useProduct = () => {
     }
   };
 
+  const handleGetProductDetailBySlug = async (slug, productSlug, color, size) => {
+    const res = await getProductDetailBySlug(slug, productSlug, color, size)
+    return res.product
+  }
+
   const handleAddProductVariants = async(productId, newProductVariant) => {
     try{
       const data = await addProductVariant(productId, newProductVariant)
@@ -99,5 +105,6 @@ export const useProduct = () => {
     handleCreateCategory,
     handleGetAllCategory,
     handleGetProductBySlug,
+    handleGetProductDetailBySlug
   };
 };

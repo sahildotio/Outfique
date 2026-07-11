@@ -7,7 +7,8 @@ import {
   getProductByIdController,
   addProductVariantController,
   getSearchController,
-  deleteController
+  deleteController,
+  getProductBySlugController
 } from "../controllers/product.controller.js";
 import multer from "multer"
 import { createProductValidator } from "../validators/product.validator.js"
@@ -50,6 +51,13 @@ router.get("/", getAllProductsController)
  * @GET
  */
 router.get("/details/:productId", getProductByIdController)
+
+/**
+ * @Get product by slug and product slug
+ * @GET method
+ */
+
+router.get("/details/:slug/:productSlug", getProductBySlugController)
 
 /**
  * @Add product variant

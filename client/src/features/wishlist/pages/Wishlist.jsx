@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Trash2, HeartOff } from "lucide-react";
+import { useCart } from "@/features/cart/hooks/useCart";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { HeartOff, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useWishlist } from "../hooks/useWishlist";
 
 const Wishlist = () => {
   const { handleGetWishlist, handleDeleteWishlist } = useWishlist();
-
   const [wishlistData, setWishlistData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [removingIds, setRemovingIds] = useState({});
+  const [moveToBag, setMoveToBag] = useState({})
 
   const fetchWishListData = async () => {
     const res = await handleGetWishlist();
@@ -21,21 +22,37 @@ const Wishlist = () => {
 
   useEffect(() => {
     if (wishlistData) setLoading(false);
-  }, [wishlistData])
+  }, [wishlistData]);
 
-  const handleRemove = async(item) => {
+  const { handleAddToCart } = useCart();
+
+  const handleMoveToBag = async (productId, variantId) => {
     try {
-      setRemovingIds(prev => ({...prev, [item._id]: true}))
+      await handleAddToCart(productId._id, variantId);
+      setMoveToBag((prev) => ({...prev, [productId]: !prev[productId]}))
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+  
+  console.log(moveToBag)
 
-      const res = await handleDeleteWishlist(item.productId._id, item.variantId)
+  const handleRemove = async (item) => {
+    try {
+      setRemovingIds((prev) => ({ ...prev, [item._id]: true }));
 
-      if(res.success) {
-        setWishlistData(prev => prev.filter(i => i._id !== item._id))
+      const res = await handleDeleteWishlist(
+        item.productId._id,
+        item.variantId,
+      );
+
+      if (res.success) {
+        setWishlistData((prev) => prev.filter((i) => i._id !== item._id));
       }
     } catch (error) {
       console.log(error.message);
     } finally {
-      setRemovingIds(prev => ({...prev, [item._id]: true}))
+      setRemovingIds((prev) => ({ ...prev, [item._id]: true }));
     }
   };
 
@@ -71,6 +88,7 @@ const Wishlist = () => {
                 item={item}
                 removing={!!removingIds[item._id]}
                 onRemove={handleRemove}
+                moveToBag={handleMoveToBag}
               />
             ))}
           </AnimatePresence>
@@ -80,9 +98,8 @@ const Wishlist = () => {
   );
 };
 
-const WishlistItemCard = ({ item, removing, onRemove }) => {
+const WishlistItemCard = ({ item, removing, onRemove, moveToBag }) => {
   const prefersReducedMotion = useReducedMotion();
-  const { handleDeleteWishlist } = useWishlist();
   const product = item?.productId;
   const variant =
     product?.variants?.find((v) => v._id === item?.variantId) ||
@@ -96,7 +113,6 @@ const WishlistItemCard = ({ item, removing, onRemove }) => {
   const currency =
     variant?.price?.currency ?? product?.price?.currency ?? "INR";
   const outOfStock = variant?.stock === 0;
-
 
   const formattedPrice = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -162,9 +178,9 @@ const WishlistItemCard = ({ item, removing, onRemove }) => {
 
         <div className="mt-3 flex items-end justify-between gap-3">
           <motion.button
+            onClick={() => moveToBag(product._id, variant._id)}
             type="button"
             disabled={outOfStock}
-            onClick={() => onMoveToBag(item)}
             whileTap={prefersReducedMotion || outOfStock ? {} : { scale: 0.96 }}
             className="text-xs font-semibold uppercase tracking-wide text-stone-900 underline decoration-1 underline-offset-4 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:text-stone-300 disabled:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-400 dark:text-zinc-100 dark:disabled:text-zinc-600 sm:text-sm"
           >

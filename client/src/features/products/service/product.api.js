@@ -83,3 +83,13 @@ export const getProductBySlug = async (slug) => {
   const response = await categoryApiInstance.get(`/${slug}`);
   return response.data
 }
+
+export const getProductDetailBySlug = async (slug, productSlug, color, size ) => {
+  const response = await productApiInstance.get(`/details/${slug}/${productSlug}`, {
+    params: {
+      color,
+      size
+    }
+  })
+  return response.data
+}

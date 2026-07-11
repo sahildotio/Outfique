@@ -1,13 +1,13 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useProduct } from '../hooks/useProduct'
 import { useParams } from 'react-router'
 import Product from '../components/Product'
 
 const CategoryWiseProduct = () => {
     const { handleGetProductBySlug } = useProduct()
-    const [productData, setProductData] = React.useState([])
+    const [productData, setProductData] = useState([])
     const { slug } = useParams()
-    
+    console.log(slug)
     const fetchProductData = async () => {
         const res = await handleGetProductBySlug(slug)
         setProductData(res)
@@ -25,6 +25,8 @@ const CategoryWiseProduct = () => {
             </div>
         )
     }
+
+    console.log(productData)
 
   return (
       <div className='flex flex-col gap-5 px-4'>

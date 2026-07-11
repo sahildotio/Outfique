@@ -277,44 +277,80 @@ const getSearchController = async (req, res) => {
 
 const deleteController = async (req, res) => {
   try {
-    const {productId} = req.params    
-    const product = await products.findById(productId)
+    const { productId } = req.params;
+    const product = await products.findById(productId);
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found"
-      })
+        message: "Product not found",
+      });
     }
 
     if (!product.seller.equals(req.user._id)) {
       return res.status(403).json({
         success: false,
-        message: "Forbidden, You can only delete your own product"
-      })
+        message: "Forbidden, You can only delete your own product",
+      });
     }
 
-    await products.findByIdAndDelete(productId)
+    await products.findByIdAndDelete(productId);
 
     return res.status(200).json({
       success: true,
-      message: "Product deleted successfully"
-    })
-
+      message: "Product deleted successfully",
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Something went wrong",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
+
+const getProductBySlugController = async (req, res) => {
+  
+    const { slug, productSlug } = req.params;
+    const { color, size } = req.query;
+
+    const product = await products
+      .findOne({ productSlug })
+      .populate("category");
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    if (product.category.slug !== slug) {
+      return res.status(404).json({
+        success: false,
+        message: "Invalid category",
+      });
+    }
+
+    
+
+ 
+
+    return res.status(200).json({
+      success: true,
+      message: "Product fetched",
+      product,
+     
+    });
+  
+};
 
 export {
   addProductVariantController,
   createProductController,
+  deleteController,
   getAllProductsController,
   getAllSellerProductsController,
   getProductByIdController,
+  getProductBySlugController,
   getSearchController,
-  deleteController
 };

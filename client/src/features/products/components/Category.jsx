@@ -37,7 +37,7 @@ const Category = () => {
             <Link
               key={cat._id}
               ref={(el) => (itemRefs.current[cat._id] = el)}
-              href="#"
+
               onClick={(e) => {
                 e.preventDefault();
                 setActiveId(cat._id);
