@@ -288,6 +288,7 @@ const SellerProductDetail = () => {
                         className={inputClass}
                       />
                     </div>
+
                     <div className="flex flex-col gap-2">
                       <Label className="text-xs font-medium tracking-[0.1em] uppercase text-stone-500 dark:text-stone-400">
                         Variant Price

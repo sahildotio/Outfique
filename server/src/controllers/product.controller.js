@@ -208,6 +208,7 @@ const addProductVariantController = async (req, res) => {
     const stock = req.body.stock;
     const attributes = JSON.parse(req.body.attributes || "{}");
     const price = req.body.amount;
+    const color = req.body.color;
 
     product.variants.push({
       productImages: images,
@@ -217,6 +218,7 @@ const addProductVariantController = async (req, res) => {
         amount: price,
         currency: req.body.currency || product.price.currency,
       },
+      color
     });
 
     await product.save();
@@ -230,6 +232,7 @@ const addProductVariantController = async (req, res) => {
         attributes,
         price,
         productImages: images,
+        color
       },
     });
   } catch (error) {

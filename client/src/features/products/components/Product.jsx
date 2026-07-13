@@ -122,9 +122,9 @@ const ProductCardSkeleton = () => (
 );
 
 // ── Product Grid ──────────────────────────────────────────────────────────
-export const Product = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+export const Product = ({products: initialProducts}) => {
+  const [products, setProducts] = useState(initialProducts || []);
+  const [loading, setLoading] = useState(!initialProducts);
   const [wishlist, setWishlist] = useState({});
   const { handleGetAllProducts } = useProduct();
 
@@ -136,8 +136,17 @@ export const Product = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (!initialProducts) {
+      fetchProducts();
+    }
+  }, [initialProducts]);
+
+  useEffect(() => {
+    if (initialProducts) {
+      setProducts(initialProducts);
+      setLoading(false)
+    }
+  }, [initialProducts]);
 
   const { handleAddWishlist } = useWishlist();
 
@@ -155,7 +164,7 @@ export const Product = () => {
 
   useEffect(() => {
       document.title = "Men's Fashion | Premium Clothing & Accessories";
-    })
+  })
   
   return (
     <div className="mx-auto max-w-[1400px] px-3 py-6 sm:px-6 lg:px-12 transition-colors duration-300">

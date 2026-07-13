@@ -27,6 +27,10 @@ const variantSchema = new Schema(
       type: priceSchema,
       required: true,
     },
+
+    color: {
+      type: String,
+    }
   },
   { _id: true },
 );

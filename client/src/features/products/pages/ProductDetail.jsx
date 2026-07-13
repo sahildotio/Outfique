@@ -18,26 +18,8 @@ import {
   WhatsappIcon,
   WhatsappShareButton,
 } from "react-share";
+import Product from "../components/Product";
 import { useProduct } from "../hooks/useProduct";
-
-// ---- known color name -> swatch hex (extend as needed) ----
-const COLOR_HEX = {
-  pink: "#e8b4bc",
-  olive: "#6b6f4a",
-  black: "#18181b",
-  white: "#fafafa",
-  navy: "#1e293b",
-  grey: "#9ca3af",
-  gray: "#9ca3af",
-  beige: "#e3d5bd",
-  brown: "#5c4033",
-  red: "#b91c1c",
-  blue: "#3b5f8a",
-  green: "#3f6b4f",
-};
-
-const swatchHex = (name = "") =>
-  COLOR_HEX[name.trim().toLowerCase()] || "#a8a29e";
 
 const formatINR = (amount) =>
   new Intl.NumberFormat("en-IN", {
@@ -51,9 +33,18 @@ const ease = [0.22, 1, 0.36, 1];
 const ProductDetail = () => {
   const { slug, productSlug } = useParams();
   const [product, setProduct] = useState(null);
+  const [allProduct, setAllProduct] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const { handleGetProductDetailBySlug } = useProduct();
+  const [wishlist, setWishlist] = useState({});
+
+  const { handleGetProductDetailBySlug, handleGetProductBySlug } = useProduct();
+  const { handleAddWishlist } = useWishlist();
+
+  const toggleWishlist = async (productId, variantId) => {
+    await handleAddWishlist(productId, variantId)
+    setWishlist(prev => ({...prev, [productId]: !prev[productId] }))
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -68,6 +59,17 @@ const ProductDetail = () => {
       setLoading(false);
     }
   };
+
+  const fetchAllProductBySlug = async () => {
+    const res = await handleGetProductBySlug(slug);
+    setAllProduct(res);
+  };
+
+  useEffect(() => {
+    if (slug) {
+      fetchAllProductBySlug();
+    }
+  }, []);
 
   useEffect(() => {
     if (slug && productSlug) {
@@ -91,20 +93,16 @@ const ProductDetail = () => {
     );
   }
 
-  return <ProductDetailView product={product} />;
+  return <ProductDetailView product={product} allProduct={allProduct} toggleWishList={toggleWishlist} />;
 };
 
-function ProductDetailView({ product }) {
+function ProductDetailView({ product, allProduct, toggleWishList, wishlist }) {
   const reduceMotion = useReducedMotion();
   const variants = product.variants || [];
-  const shareUrl = `${window.location.origin}/product/${product.category.slug}/${product.productSlug}`;
-  const shareTitle = product.title;
   const [shareOpen, setShareOpen] = useState(false);
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [activeSize, setActiveSize] = useState(null);
-  const [wishlisted, setWishlisted] = useState(false);
-  const [addToCart, setAddToCart] = useState([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [careOpen, setCareOpen] = useState(false);
   const thumbColRef = useRef(null);
@@ -132,19 +130,9 @@ function ProductDetailView({ product }) {
 
   const sizes = activeVariant?.attributes?.size || [];
 
-  const { handleAddWishlist } = useWishlist();
-
-  const toggleWishList = async (productId, variantId) => {
-    try {
-      await handleAddWishlist(productId, variantId);
-      setWishlisted((prev) => ({
-        ...prev,
-        [productId]: !prev[productId],
-      }));
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
+  const relatedProducts = useMemo(() => {
+    return allProduct.filter((item) => item._id !== product._id);
+  }, [allProduct, product._id]);
 
   return (
     <div className="min-h-screen w-full bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-colors">
@@ -285,38 +273,42 @@ function ProductDetailView({ product }) {
 
             <div className="mt-6 h-px bg-stone-200 dark:bg-stone-800" />
 
-            {/* Color */}
-            {variants.length > 0 && (
+            {/* Variant (image-based, color swatches removed) */}
+            {variants.length > 1 && (
               <div className="mt-8">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium tracking-[0.1em] uppercase text-stone-500 dark:text-stone-400">
-                    Color
-                  </span>
-                  <span className="text-xs font-medium uppercase text-stone-700 dark:text-stone-300">
-                    {activeVariant?.attributes?.color}
-                  </span>
-                </div>
+                <span className="text-xs font-medium tracking-[0.1em] uppercase text-stone-500 dark:text-stone-400">
+                  Variant
+                </span>
                 <div className="mt-3 flex gap-2.5">
-                  {variants.map((v, idx) => (
-                    <button
-                      key={v._id}
-                      onClick={() => handleSelectVariant(idx)}
-                      aria-label={`Select color ${v.attributes?.color}`}
-                      aria-pressed={idx === activeVariantIdx}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ring-1 ring-offset-2 ring-offset-white dark:ring-offset-stone-950 transition-all duration-300 ${
-                        idx === activeVariantIdx
-                          ? "ring-2 ring-stone-900 dark:ring-white scale-105"
-                          : "ring-stone-300 dark:ring-stone-700 hover:ring-stone-500"
-                      }`}
-                    >
-                      <span
-                        className="w-6 h-6 rounded-full border border-black/10"
-                        style={{
-                          backgroundColor: swatchHex(v.attributes?.color),
-                        }}
-                      />
-                    </button>
-                  ))}
+                  {variants.map((v, idx) => {
+                    const variantImage = v.productImages?.[0]?.url;
+                    return (
+                      <button
+                        key={v._id}
+                        onClick={() => handleSelectVariant(idx)}
+                        aria-label={`Select variant ${idx + 1}`}
+                        aria-pressed={idx === activeVariantIdx}
+                        className={`relative w-14 h-14 rounded-xl overflow-hidden ring-1 ring-offset-2 ring-offset-white dark:ring-offset-stone-950 transition-all duration-300 ${
+                          idx === activeVariantIdx
+                            ? "ring-2 ring-stone-900 dark:ring-white scale-105"
+                            : "ring-stone-300 dark:ring-stone-700 hover:ring-stone-500"
+                        }`}
+                      >
+                        {variantImage ? (
+                          <img
+                            src={variantImage}
+                            alt={`Variant ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center bg-stone-100 dark:bg-stone-800 text-[10px] text-stone-500">
+                            {idx + 1}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -361,19 +353,18 @@ function ProductDetailView({ product }) {
                 Add to Bag
               </motion.button>
               <button
-                onClick={() => setWishlisted((w) => !w)}
+                onClick={() => toggleWishList(product._id, activeVariant?._id)}
                 aria-label={
-                  wishlisted ? "Remove from wishlist" : "Add to wishlist"
+                  wishlist?.[product._id]
+                    ? "Remove from wishlist"
+                    : "Add to wishlist"
                 }
-                aria-pressed={wishlisted}
+                aria-pressed={wishlist?.[product._id]}
                 className="w-13 h-13 aspect-square rounded-xl border border-stone-200 dark:border-stone-800 flex items-center justify-center hover:border-stone-400 dark:hover:border-stone-600 transition-colors"
               >
                 <Heart
-                  onClick={() => {
-                    toggleWishList();
-                  }}
                   className={`w-4.5 h-4.5 transition-colors ${
-                    wishlisted
+                    wishlist?.[product._id]
                       ? "fill-rose-500 text-rose-500"
                       : "text-stone-700 dark:text-stone-300"
                   }`}
@@ -407,6 +398,10 @@ function ProductDetailView({ product }) {
             </div>
           </motion.div>
         </div>
+      </div>
+      <div className="w-full mb-10"></div>
+      <div className="flex flex-col gap-5 px-4">
+        <Product products={relatedProducts} />
       </div>
     </div>
   );

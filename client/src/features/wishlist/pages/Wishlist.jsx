@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { HeartOff, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useWishlist } from "../hooks/useWishlist";
+import { useSelector } from "react-redux";
 
 const Wishlist = () => {
   const { handleGetWishlist, handleDeleteWishlist } = useWishlist();
@@ -10,6 +11,9 @@ const Wishlist = () => {
   const [loading, setLoading] = useState(true);
   const [removingIds, setRemovingIds] = useState({});
   const [moveToBag, setMoveToBag] = useState({})
+
+  const product = useSelector((state) => state.product.products);
+  console.log(product)
 
   const fetchWishListData = async () => {
     const res = await handleGetWishlist();
@@ -28,14 +32,12 @@ const Wishlist = () => {
 
   const handleMoveToBag = async (productId, variantId) => {
     try {
-      await handleAddToCart(productId._id, variantId);
+      await handleAddToCart(productId, variantId);
       setMoveToBag((prev) => ({...prev, [productId]: !prev[productId]}))
     } catch (error) {
       console.log(error.message);
     }
   };
-  
-  console.log(moveToBag)
 
   const handleRemove = async (item) => {
     try {
