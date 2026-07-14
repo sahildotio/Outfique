@@ -19,15 +19,15 @@ import {
 export const useCart = () => {
   const dispatch = useDispatch();
 
-  const handleAddToCart = async ({ productId, variantId }) => {
-    const data = await addToCart({ productId, variantId });
-    dispatch(addItems(data.items));
-    return data.items;
+  const handleAddToCart = async ({ productId, variantId, size }) => {
+    const data = await addToCart({ productId, variantId, size });
+    dispatch(addItems(data.cart));
+    return data.cart;
   };
 
   const handleGetAllAddToCart = async () => {
     const data = await getAllCartItems();
-    dispatch(setItems(data.cart));
+    dispatch(addItems(data.cart));
     return data.cart;
   };
 

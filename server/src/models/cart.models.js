@@ -19,6 +19,10 @@ const cartSchema = new mongoose.Schema({
                 ref: `product.variants`,
                 required: true
             },
+            size: {
+                type: String,
+                required: true
+            },
             price: {
                 type: priceSchema
             },

@@ -10,13 +10,18 @@ const cartSlice = createSlice({
   reducers: {
     setItems: (state, action) => {
       state.items = action.payload;
+      state.totalPrice = action.payload.totalPrice?.amount ?? 0;
+      state.currency = action.payload.totalPrice?.currency ?? "INR"
     },
     addItems: (state, action) => {
-      state.items.push(action.payload);
+      state.items = action.payload.items
+      state.totalPrice = action.totalPrice?.amount ?? 0;
+      state.currency = action.totalPrice?.currency ?? "INR"
     },
     incrementItems: (state, action) => {
       const { productId, variantId } = action.payload;
-
+      console.log(state.items);
+      console.log(Array.isArray(state.items));
       const item = state.items.find(
         (item) => item.productId === productId && item.variantId === variantId,
       );

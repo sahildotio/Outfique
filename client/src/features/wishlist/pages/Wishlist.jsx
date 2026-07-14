@@ -1,19 +1,16 @@
 import { useCart } from "@/features/cart/hooks/useCart";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { HeartOff, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useWishlist } from "../hooks/useWishlist";
-import { useSelector } from "react-redux";
 
 const Wishlist = () => {
   const { handleGetWishlist, handleDeleteWishlist } = useWishlist();
   const [wishlistData, setWishlistData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [removingIds, setRemovingIds] = useState({});
-  const [moveToBag, setMoveToBag] = useState({})
-
-  const product = useSelector((state) => state.product.products);
-  console.log(product)
+  const [movingIds, setMovingIds] = useState({});
+  const [selectedItem, setSelectedItem] = useState(null)
+  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false)
 
   const fetchWishListData = async () => {
     const res = await handleGetWishlist();
@@ -29,16 +26,22 @@ const Wishlist = () => {
   }, [wishlistData]);
 
   const { handleAddToCart } = useCart();
-
-  const handleMoveToBag = async (productId, variantId) => {
+  console.log(wishlistData)
+  const handleMoveToBag = async (item) => {
     try {
-      await handleAddToCart(productId, variantId);
-      setMoveToBag((prev) => ({...prev, [productId]: !prev[productId]}))
+      setMovingIds(prev => ({...prev, [item._id]: true}))
+      await handleAddToCart(item.productId._id, item.variantId)
+      const res = await handleDeleteWishlist(item.productId._id, item.variantId)
+      if (res.success) {
+        setWishlistData(prev => prev.filter((i)=> i._id !== item._id))
+      }
     } catch (error) {
-      console.log(error.message);
+      console.log(error.message)
+    } finally {
+      setMovingIds(prev => ({...prev, [item._id]: false}))
     }
   };
-
+  
   const handleRemove = async (item) => {
     try {
       setRemovingIds((prev) => ({ ...prev, [item._id]: true }));
@@ -54,13 +57,13 @@ const Wishlist = () => {
     } catch (error) {
       console.log(error.message);
     } finally {
-      setRemovingIds((prev) => ({ ...prev, [item._id]: true }));
+      setRemovingIds((prev) => ({ ...prev, [item._id]: false }));
     }
   };
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
-      <h1 className="mb-5 text-lg font-medium text-stone-900 dark:text-zinc-100 sm:mb-6 sm:text-xl">
+      <h1 className="mb-5 text-lg font-medium text-zinc-900 dark:text-white sm:mb-6 sm:text-xl">
         Wishlist
       </h1>
 
@@ -71,13 +74,9 @@ const Wishlist = () => {
           ))}
         </div>
       ) : !wishlistData?.length ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-zinc-800">
-          <HeartOff
-            size={28}
-            strokeWidth={1.5}
-            className="text-stone-300 dark:text-zinc-600"
-          />
-          <p className="text-sm text-stone-500 dark:text-zinc-400">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-zinc-200 py-16 text-center dark:border-white/10">
+          <i className="ri-heart-3-line text-3xl text-zinc-300 dark:text-zinc-600" />
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Your wishlist is empty
           </p>
         </div>
@@ -89,6 +88,7 @@ const Wishlist = () => {
                 key={item._id}
                 item={item}
                 removing={!!removingIds[item._id]}
+                moving={!!movingIds[item._id]}
                 onRemove={handleRemove}
                 moveToBag={handleMoveToBag}
               />
@@ -100,7 +100,7 @@ const Wishlist = () => {
   );
 };
 
-const WishlistItemCard = ({ item, removing, onRemove, moveToBag }) => {
+const WishlistItemCard = ({ item, removing, onRemove, moving, moveToBag }) => {
   const prefersReducedMotion = useReducedMotion();
   const product = item?.productId;
   const variant =
@@ -133,9 +133,9 @@ const WishlistItemCard = ({ item, removing, onRemove, moveToBag }) => {
       }
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="flex gap-4 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:gap-5 sm:p-4"
+      className="flex gap-4 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-[#141414] sm:gap-5 sm:p-4"
     >
-      <div className="relative w-24 shrink-0 overflow-hidden rounded-xl bg-stone-100 dark:bg-zinc-800 sm:w-28 md:w-32">
+      <div className="relative w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-white/[0.06] sm:w-28 md:w-32">
         <div className="aspect-[3/4] w-full">
           {image ? (
             <img
@@ -145,7 +145,7 @@ const WishlistItemCard = ({ item, removing, onRemove, moveToBag }) => {
               loading="lazy"
             />
           ) : (
-            <div className="h-full w-full animate-pulse bg-stone-200 dark:bg-zinc-700" />
+            <div className="h-full w-full animate-pulse bg-zinc-200 dark:bg-white/[0.08]" />
           )}
         </div>
         {outOfStock && (
@@ -158,11 +158,11 @@ const WishlistItemCard = ({ item, removing, onRemove, moveToBag }) => {
       <div className="flex min-w-0 flex-1 flex-col justify-between">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate text-sm font-medium text-stone-900 dark:text-zinc-100 sm:text-base">
+            <h3 className="truncate text-sm font-medium text-zinc-900 dark:text-white sm:text-base">
               {product?.title}
             </h3>
             {color && (
-              <p className="mt-1 text-xs text-stone-500 dark:text-zinc-400 sm:text-sm">
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
                 {color}
               </p>
             )}
@@ -172,24 +172,24 @@ const WishlistItemCard = ({ item, removing, onRemove, moveToBag }) => {
             type="button"
             onClick={() => onRemove(item)}
             aria-label="Remove from wishlist"
-            className="shrink-0 rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-400 cursor-pointer dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="shrink-0 rounded-full p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e63b1f]/50 cursor-pointer dark:text-zinc-500 dark:hover:bg-white/5 dark:hover:text-zinc-200"
           >
-            <Trash2 size={18} strokeWidth={1.75} />
+            <i className="ri-delete-bin-line text-[18px]" />
           </button>
         </div>
 
         <div className="mt-3 flex items-end justify-between gap-3">
           <motion.button
-            onClick={() => moveToBag(product._id, variant._id)}
+            onClick={() => moveToBag(item)}
             type="button"
-            disabled={outOfStock}
-            whileTap={prefersReducedMotion || outOfStock ? {} : { scale: 0.96 }}
-            className="text-xs font-semibold uppercase tracking-wide text-stone-900 underline decoration-1 underline-offset-4 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:text-stone-300 disabled:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-400 dark:text-zinc-100 dark:disabled:text-zinc-600 sm:text-sm"
+            disabled={outOfStock || moving} 
+            whileTap={prefersReducedMotion || outOfStock || moving ? {} : { scale: 0.96 }}
+            className="text-xs font-semibold uppercase tracking-wide text-zinc-900 underline decoration-1 underline-offset-4 transition-colors hover:text-[#e63b1f] disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:text-zinc-300 disabled:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e63b1f]/50 dark:text-white dark:disabled:text-zinc-600 dark:disabled:hover:text-zinc-600 sm:text-sm"
           >
-            {outOfStock ? "Unavailable" : "Move to bag"}
+            {moving ? "Moving..." : outOfStock ? "Unavailable": "Move to bag"}
           </motion.button>
 
-          <span className="text-sm font-semibold text-stone-900 dark:text-zinc-100 sm:text-base">
+          <span className="text-sm font-semibold text-zinc-900 dark:text-white sm:text-base">
             {formattedPrice}
           </span>
         </div>
@@ -199,18 +199,18 @@ const WishlistItemCard = ({ item, removing, onRemove, moveToBag }) => {
 };
 
 const WishlistItemSkeleton = () => (
-  <div className="flex animate-pulse gap-4 rounded-2xl border border-stone-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900 sm:gap-5 sm:p-4">
-    <div className="w-24 shrink-0 overflow-hidden rounded-xl bg-stone-100 dark:bg-zinc-800 sm:w-28 md:w-32">
+  <div className="flex animate-pulse gap-4 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-white/10 dark:bg-[#141414] sm:gap-5 sm:p-4">
+    <div className="w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-white/[0.06] sm:w-28 md:w-32">
       <div className="aspect-[3/4] w-full" />
     </div>
     <div className="flex flex-1 flex-col justify-between py-1">
       <div className="space-y-2">
-        <div className="h-3.5 w-3/4 rounded bg-stone-200 dark:bg-zinc-800" />
-        <div className="h-3 w-1/4 rounded bg-stone-200 dark:bg-zinc-800" />
+        <div className="h-3.5 w-3/4 rounded bg-zinc-100 dark:bg-white/[0.06]" />
+        <div className="h-3 w-1/4 rounded bg-zinc-100 dark:bg-white/[0.06]" />
       </div>
       <div className="flex items-end justify-between">
-        <div className="h-3 w-20 rounded bg-stone-200 dark:bg-zinc-800" />
-        <div className="h-4 w-14 rounded bg-stone-200 dark:bg-zinc-800" />
+        <div className="h-3 w-20 rounded bg-zinc-100 dark:bg-white/[0.06]" />
+        <div className="h-4 w-14 rounded bg-zinc-100 dark:bg-white/[0.06]" />
       </div>
     </div>
   </div>

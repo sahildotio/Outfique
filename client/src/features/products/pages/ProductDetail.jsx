@@ -1,3 +1,4 @@
+import { useCart } from "@/features/cart/hooks/useCart";
 import { useWishlist } from "@/features/wishlist/hooks/useWishlist";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -37,13 +38,30 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [wishlist, setWishlist] = useState({});
+  const [addToCart, setAddToCart] = useState({});
 
   const { handleGetProductDetailBySlug, handleGetProductBySlug } = useProduct();
   const { handleAddWishlist } = useWishlist();
+  const { handleAddToCart } = useCart();
 
   const toggleWishlist = async (productId, variantId) => {
-    await handleAddWishlist(productId, variantId)
-    setWishlist(prev => ({...prev, [productId]: !prev[productId] }))
+    const res = await handleAddWishlist(productId, variantId);
+    if (res?.success) {
+      setWishlist((prev) => ({
+        ...prev,
+        [productId]: !prev[productId],
+      }));
+    }
+  };
+
+  const handleMoveToBag = async (productId, variantId, size) => {
+    const res = await handleAddToCart({productId, variantId, size});
+    if (res?.success) {
+      setAddToCart((prev) => ({
+        ...prev,
+        [variantId]: true,
+      }));
+    }
   };
 
   const fetchData = async () => {
@@ -93,10 +111,26 @@ const ProductDetail = () => {
     );
   }
 
-  return <ProductDetailView product={product} allProduct={allProduct} toggleWishList={toggleWishlist} />;
+
+  return (
+    <ProductDetailView
+      product={product}
+      allProduct={allProduct}
+      toggleWishList={toggleWishlist}
+      moveToBag={handleMoveToBag}
+      addToCart={addToCart}
+    />
+  );
 };
 
-function ProductDetailView({ product, allProduct, toggleWishList, wishlist }) {
+function ProductDetailView({
+  product,
+  allProduct,
+  toggleWishList,
+  wishlist,
+  moveToBag,
+  addToCart,
+}) {
   const reduceMotion = useReducedMotion();
   const variants = product.variants || [];
   const [shareOpen, setShareOpen] = useState(false);
@@ -346,11 +380,19 @@ function ProductDetailView({ product, allProduct, toggleWishList, wishlist }) {
             <div className="mt-8 flex gap-3">
               <motion.button
                 whileTap={reduceMotion ? {} : { scale: 0.98 }}
-                disabled={sizes.length > 0 && !activeSize}
+                disabled={
+                  (sizes.length > 0 && !activeSize) ||
+                  addToCart?.[activeVariant?._id]
+                }
                 className="flex-1 h-13 py-3.5 rounded-xl bg-stone-900 text-white dark:bg-white dark:text-stone-900 text-sm font-medium tracking-wide hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-900 dark:focus-visible:ring-white"
-                onClick={() => console.log("Hello world")}
+                onClick={() => {
+                  console.log("productId:", product._id);
+                  console.log("variantId:", activeVariant?._id);
+                  console.log("size", activeSize)
+                  moveToBag(product._id, activeVariant?._id, activeSize);
+                }}
               >
-                Add to Bag
+                {addToCart?.[activeVariant._id] ? "Added to Bag" : "Add To Bag"}
               </motion.button>
               <button
                 onClick={() => toggleWishList(product._id, activeVariant?._id)}
