@@ -51,6 +51,8 @@ const Cart = () => {
   const user = useSelector((state) => state.auth.user);
   const [cartItem, setCartItem] = useState([]);
   const [removingKeys, setRemovingKeys] = useState({});
+  const [selectAddress, setSelectAddress] = useState([])
+
   const {
     handleGetAllAddToCart,
     handleIncrementItems,
@@ -102,16 +104,16 @@ const Cart = () => {
   };
 
   async function handleCheckOut() {
-    const order = await handleAddToCartOrder();
+    const {razorpayOrder} = await handleAddToCartOrder({shippingAddress: selectAddress._id});
     console.log(order);
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
-      amount: order.amount,
-      currency: order.currency,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
       name: "Outfique",
       description: "Test Transaction",
-      order_id: order.id,
+      order_id: razorpayOrder.id,
       handler: async (response) => {
         const isValid = await handleVerifyCartOrderPayment({
           razorpay_order_id: response.razorpay_order_id,

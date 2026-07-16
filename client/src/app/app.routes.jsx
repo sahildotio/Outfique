@@ -74,12 +74,16 @@ export const router = createBrowserRouter([
         element: <ProductDetail />,
       },
       {
-        path: "/cart",
+        path: "/checkout/cart",
         element: (
           <Protected>
             <Cart />
           </Protected>
         ),
+      },
+      {
+        path: "/checkout/address/new",
+        
       },
       {
         path: "/order/success",

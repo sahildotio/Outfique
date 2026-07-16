@@ -26,8 +26,9 @@ export const useWishlist = () => {
 
     const handleDeleteWishlist = async (productId, variantId) => {
         try {
-             await deleteWishList(productId, variantId)            
-            dispatch(deleteItems({productId, variantId}))   
+            const res = await deleteWishList(productId, variantId)            
+            dispatch(deleteItems({ productId, variantId }))  
+            return res
         } catch (error) {
             throw error.message
         }

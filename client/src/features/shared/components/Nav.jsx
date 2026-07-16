@@ -221,7 +221,7 @@ const Navbar = () => {
                     icon="ri-shopping-bag-3-line"
                     label="Cart"
                     count={cartCount}
-                    onClick={() => navigate("/cart")}
+                    onClick={() => navigate("/checkout/cart")}
                   />
                 </div>
               </>
@@ -279,7 +279,7 @@ const Navbar = () => {
                     <DropdownItem
                       icon="ri-shopping-bag-3-line"
                       label="Cart"
-                      onClick={() => navigate("/cart")}
+                      onClick={() => navigate("/checkout/cart")}
                     />
 
                     {isSeller && (
@@ -430,7 +430,7 @@ const Navbar = () => {
                 <SidebarItem
                   icon="ri-shopping-bag-3-line"
                   label={`Cart (${cartCount})`}
-                  onClick={() => navigate("/cart")}
+                  onClick={() => navigate("/checkout/cart")}
                 />
               </>
             )}

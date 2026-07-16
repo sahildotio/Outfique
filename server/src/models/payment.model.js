@@ -4,8 +4,8 @@ import priceSchema from "./price.schema.js"
 const paymentSchema = new mongoose.Schema({
     status: {
         type: String,
-        enum: ["pending", "completed", "failed"],
-        default: "pending",
+        enum: ["PENDING", "AUTHORIZED", "PAID", "FAILED", "REFUNDED"],
+        default: "PENDING",
     },
     price: {
         type: priceSchema,
@@ -18,29 +18,13 @@ const paymentSchema = new mongoose.Schema({
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "user",
         required: true,
     },
-    order: [
-        {
-            title: String,
-            productId: mongoose.Schema.Types.ObjectId,
-            variantId: mongoose.Schema.Types.ObjectId,
-            quantity: Number,
-            productImages: [{ url: String }],
-            price: priceSchema,
-            description: String
-        }
-    ],
-    orderStatus: {
-        type: String,
-        enum: [
-            "Processing",
-            "Packed",
-            "Shipped",
-            "Delivered",
-            "Cancelled"
-        ],
+    order: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "order",
+        required: true
     }
 },{timestamps: true})
 

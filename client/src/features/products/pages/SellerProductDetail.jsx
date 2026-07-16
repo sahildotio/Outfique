@@ -1,15 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ChevronLeft, ImagePlus, X, Loader2, Plus } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ChevronLeft, ImagePlus, Loader2, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { useProduct } from "../hooks/useProduct";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ease = [0.22, 1, 0.36, 1];
 
@@ -33,7 +33,9 @@ const ATTRIBUTE_KEYS = [
 
 // size is the one attribute whose value is an array ("size": ["M","XS","L"])
 // rather than a single string — everything else stays plain text.
-const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL"];
+// Two separate size systems: clothing sizes vs shoe sizes, toggled via `sizeType`.
+const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const SHOE_SIZES = ["5", "6", "7", "8", "9", "10", "11", "12"];
 
 const inputClass =
   "rounded-xl border-stone-200 dark:border-stone-800 bg-transparent focus-visible:ring-1 focus-visible:ring-stone-900 dark:focus-visible:ring-white";
@@ -66,6 +68,9 @@ const SellerProductDetail = () => {
   const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Which size system is currently active for the "size" attribute picker.
+  const [sizeType, setSizeType] = useState("clothing");
 
   const [newVariant, setNewVariant] = useState({
     stock: "",
@@ -160,6 +165,9 @@ const SellerProductDetail = () => {
     });
   };
 
+  // Size options depend on the Clothing/Shoes toggle, not the product category.
+  const SIZE_OPTIONS = sizeType === "shoe" ? SHOE_SIZES : CLOTHING_SIZES;
+
   const submitVariantHandler = async () => {
     const attrs = {};
     newVariant.attributes.forEach((a) => {
@@ -189,6 +197,12 @@ const SellerProductDetail = () => {
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.title} | Outfique`;
+    }
+  });
 
   return (
     <div className="min-h-screen w-full bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-colors">
@@ -338,27 +352,55 @@ const SellerProductDetail = () => {
                           </Select>
 
                           {attr.key === "size" ? (
-                            <div className="flex-1 flex flex-wrap gap-1.5 pt-1">
-                              {SIZE_OPTIONS.map((size) => {
-                                const selected =
-                                  Array.isArray(attr.value) &&
-                                  attr.value.includes(size);
-                                return (
-                                  <button
-                                    key={size}
-                                    type="button"
-                                    onClick={() => toggleSizeValue(idx, size)}
-                                    aria-pressed={selected}
-                                    className={`px-3 h-9 rounded-lg text-xs font-medium border transition-colors duration-200 ${
-                                      selected
-                                        ? "bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white"
-                                        : "border-stone-200 dark:border-stone-800 hover:border-stone-400 dark:hover:border-stone-600"
-                                    }`}
-                                  >
-                                    {size}
-                                  </button>
-                                );
-                              })}
+                            <div className="flex-1 flex flex-col gap-2 pt-1">
+                              {/* Clothing / Shoes toggle — only shown for the "size" attribute */}
+                              <div className="flex rounded-full border border-stone-200 dark:border-stone-800 p-0.5 w-fit">
+                                <button
+                                  type="button"
+                                  onClick={() => setSizeType("clothing")}
+                                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors duration-200 ${
+                                    sizeType === "clothing"
+                                      ? "bg-stone-900 text-white dark:bg-white dark:text-stone-900"
+                                      : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+                                  }`}
+                                >
+                                  Clothing
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSizeType("shoe")}
+                                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors duration-200 ${
+                                    sizeType === "shoe"
+                                      ? "bg-stone-900 text-white dark:bg-white dark:text-stone-900"
+                                      : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+                                  }`}
+                                >
+                                  Shoes
+                                </button>
+                              </div>
+
+                              <div className="flex flex-wrap gap-1.5">
+                                {SIZE_OPTIONS.map((size) => {
+                                  const selected =
+                                    Array.isArray(attr.value) &&
+                                    attr.value.includes(size);
+                                  return (
+                                    <button
+                                      key={size}
+                                      type="button"
+                                      onClick={() => toggleSizeValue(idx, size)}
+                                      aria-pressed={selected}
+                                      className={`px-3 h-9 rounded-lg text-xs font-medium border transition-colors duration-200 ${
+                                        selected
+                                          ? "bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white"
+                                          : "border-stone-200 dark:border-stone-800 hover:border-stone-400 dark:hover:border-stone-600"
+                                      }`}
+                                    >
+                                      {size}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
                           ) : (
                             <Input

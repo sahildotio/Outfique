@@ -2,6 +2,14 @@ import { useCart } from "@/features/cart/hooks/useCart";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useWishlist } from "../hooks/useWishlist";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const Wishlist = () => {
   const { handleGetWishlist, handleDeleteWishlist } = useWishlist();
@@ -9,8 +17,12 @@ const Wishlist = () => {
   const [loading, setLoading] = useState(true);
   const [removingIds, setRemovingIds] = useState({});
   const [movingIds, setMovingIds] = useState({});
-  const [selectedItem, setSelectedItem] = useState(null)
-  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false)
+
+  // size-picker modal state
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [confirmingMove, setConfirmingMove] = useState(false);
 
   const fetchWishListData = async () => {
     const res = await handleGetWishlist();
@@ -26,22 +38,45 @@ const Wishlist = () => {
   }, [wishlistData]);
 
   const { handleAddToCart } = useCart();
-  console.log(wishlistData)
-  const handleMoveToBag = async (item) => {
+
+  const openSizeModal = (item) => {
+    setSelectedItem(item);
+    setSelectedSize(null);
+    setIsSizeModalOpen(true);
+  };
+
+  const closeSizeModal = () => {
+    setIsSizeModalOpen(false);
+    setSelectedItem(null);
+    setSelectedSize(null);
+  };
+
+  const handleMoveToBag = async (item, size) => {
     try {
-      setMovingIds(prev => ({...prev, [item._id]: true}))
-      await handleAddToCart(item.productId._id, item.variantId)
-      const res = await handleDeleteWishlist(item.productId._id, item.variantId)
-      if (res.success) {
-        setWishlistData(prev => prev.filter((i)=> i._id !== item._id))
+      setMovingIds((prev) => ({ ...prev, [item._id]: true }));
+      await handleAddToCart(item.productId._id, item.variantId, size);
+      const res = await handleDeleteWishlist(
+        item.productId._id,
+        item.variantId,
+      );
+      if (res?.success) {
+        setWishlistData((prev) => prev.filter((i) => i._id !== item._id));
       }
     } catch (error) {
-      console.log(error.message)
+      console.log(error.message);
     } finally {
-      setMovingIds(prev => ({...prev, [item._id]: false}))
+      setMovingIds((prev) => ({ ...prev, [item._id]: false }));
     }
   };
-  
+
+  const confirmMoveToBag = async () => {
+    if (!selectedItem || !selectedSize) return;
+    setConfirmingMove(true);
+    await handleMoveToBag(selectedItem, selectedSize);
+    setConfirmingMove(false);
+    closeSizeModal();
+  };
+
   const handleRemove = async (item) => {
     try {
       setRemovingIds((prev) => ({ ...prev, [item._id]: true }));
@@ -60,6 +95,16 @@ const Wishlist = () => {
       setRemovingIds((prev) => ({ ...prev, [item._id]: false }));
     }
   };
+
+  // resolve the variant + sizes for whichever item currently has the modal open
+  const selectedProduct = selectedItem?.productId;
+  const selectedVariant =
+    selectedProduct?.variants?.find((v) => v._id === selectedItem?.variantId) ||
+    selectedProduct?.variants?.[0];
+  const selectedImage =
+    selectedVariant?.productImages?.[0]?.url ||
+    selectedProduct?.productImages?.[0]?.url;
+  const availableSizes = selectedVariant?.attributes?.size || [];
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
@@ -90,17 +135,108 @@ const Wishlist = () => {
                 removing={!!removingIds[item._id]}
                 moving={!!movingIds[item._id]}
                 onRemove={handleRemove}
-                moveToBag={handleMoveToBag}
+                onSelectSize={openSizeModal}
               />
             ))}
           </AnimatePresence>
         </div>
       )}
+
+      {/* Size picker — shown before an item actually moves to the cart */}
+      <Dialog
+        open={isSizeModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeSizeModal();
+        }}
+      >
+        <DialogContent className="rounded-2xl border-zinc-200 dark:border-white/10 bg-white dark:bg-[#141414] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-900 dark:text-white">
+              Select a size
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+              Choose a size to add this item to your bag.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center gap-3 py-1">
+            <div className="w-16 h-20 rounded-xl overflow-hidden bg-zinc-100 dark:bg-white/[0.06] shrink-0">
+              {selectedImage ? (
+                <img
+                  src={selectedImage}
+                  alt={selectedProduct?.title || "Product image"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full animate-pulse bg-zinc-200 dark:bg-white/[0.08]" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">
+                {selectedProduct?.title}
+              </p>
+              {selectedVariant?.attributes?.color && (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  {selectedVariant.attributes.color}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 py-2">
+            {availableSizes.length === 0 ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                No sizes available for this item.
+              </p>
+            ) : (
+              availableSizes.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => setSelectedSize(size)}
+                  aria-pressed={selectedSize === size}
+                  className={`h-10 min-w-10 px-3 rounded-lg text-sm font-medium border transition-colors duration-150 ${
+                    selectedSize === size
+                      ? "bg-[#e63b1f] text-white border-[#e63b1f]"
+                      : "border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-white/30"
+                  }`}
+                >
+                  {size}
+                </button>
+              ))
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <button
+              type="button"
+              onClick={closeSizeModal}
+              className="h-10 px-4 rounded-xl border border-zinc-200 dark:border-white/10 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmMoveToBag}
+              disabled={!selectedSize || confirmingMove}
+              className="h-10 px-4 rounded-xl bg-[#e63b1f] text-white text-sm font-semibold hover:bg-[#ff4f30] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {confirmingMove ? "Adding..." : "Add to Bag"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-const WishlistItemCard = ({ item, removing, onRemove, moving, moveToBag }) => {
+const WishlistItemCard = ({
+  item,
+  removing,
+  onRemove,
+  moving,
+  onSelectSize,
+}) => {
   const prefersReducedMotion = useReducedMotion();
   const product = item?.productId;
   const variant =
@@ -180,13 +316,17 @@ const WishlistItemCard = ({ item, removing, onRemove, moving, moveToBag }) => {
 
         <div className="mt-3 flex items-end justify-between gap-3">
           <motion.button
-            onClick={() => moveToBag(item)}
+            onClick={() => onSelectSize(item)}
             type="button"
-            disabled={outOfStock || moving} 
-            whileTap={prefersReducedMotion || outOfStock || moving ? {} : { scale: 0.96 }}
+            disabled={outOfStock || moving}
+            whileTap={
+              prefersReducedMotion || outOfStock || moving
+                ? {}
+                : { scale: 0.96 }
+            }
             className="text-xs font-semibold uppercase tracking-wide text-zinc-900 underline decoration-1 underline-offset-4 transition-colors hover:text-[#e63b1f] disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:text-zinc-300 disabled:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e63b1f]/50 dark:text-white dark:disabled:text-zinc-600 dark:disabled:hover:text-zinc-600 sm:text-sm"
           >
-            {moving ? "Moving..." : outOfStock ? "Unavailable": "Move to bag"}
+            {moving ? "Moving..." : outOfStock ? "Unavailable" : "Move to bag"}
           </motion.button>
 
           <span className="text-sm font-semibold text-zinc-900 dark:text-white sm:text-base">

@@ -12,7 +12,7 @@ const priceSchema = new mongoose.Schema({
   },
 }, {
     _id: false,
-    _v: false
+    versionKey: false
 });
 
 export default priceSchema;

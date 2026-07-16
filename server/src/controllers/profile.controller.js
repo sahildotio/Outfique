@@ -1,68 +1,189 @@
-import profileModel from "../models/profile.model.js"
-import users from "../models/user.models.js"
+import profileModel from "../models/profile.model.js";
+import { uploadImage, deleteImage } from "../services/storage.service.js";
 
-/**
- * @Create Profile Controller
- */
+const createProfileController = async (req, res) => {
+  const userid = req.user._id;
 
-const addProfileDetailController = async (req, res) => {
+  const avatar = await uploadImage({
+    buffer: req.file.buffer,
+    fileName: req.file.originalname,
+    folder: "Outfique/profileData",
+  });
+
+  const existingProfile = await profileModel.findOne({ user: userid });
+  const { firstName, lastName, bio } = req.body;
+  if (existingProfile) {
+    return res.status(409).json({
+      success: false,
+      message: "Profile already exist",
+    });
+  }
+
+  const profile = await profileModel.create({
+    user: userid,
+    firstName,
+    lastName,
+    avatar,
+    bio,
+  });
+
+  return res.status(201).json({
+    success: true,
+    message: "Profile created successfully",
+    profile,
+  });
+};
+
+const getProfileController = async (req, res) => {
   try {
-    const { userid } = req.params;
-    const user = await users.findById(userid)
-    const profile = await profileModel.create({
-        user: userid,
-        fullName: req.body.fullName,
-        contact: req.body.contact,
-        houseNo: req.body.houseNo,
-        street: req.body.street,
-        landmark: req.body.landmark,
-        city: req.body.city,
-        state: req.body.state,
-        country: req.body.country,
-        pincode: req.body.pincode,
-        addressType: req.body.addressType
-    })
-
-    return res.status(201).json({
-        success: true,
-        profile
-    })
+    const userid = req.user._id;
+    const profile = await profileModel.findOne({ user: userid });
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Profile fetched successfully",
+      profile,
+    });
   } catch (error) {
-    console.log("ERROR:", error);
-
     return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-/**
- * @get all profile details
- */
 
-const getProfileDetailController = async (req, res) => {
+const updateAvatarController = async (req, res) => {
   try {
-    const user = req.user;
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Avatar is required",
+      });
+    }
 
-    const profile = await profileModel
-      .findOne({ user: user._id })
-      .populate("user", "fullName email contact")
-      .sort({ createdAt: -1 });
+    const profile = await profileModel.findOne({user: req.user._id})
 
+    if(profile?.avatar?.publicId){
+      await deleteImage(profile.avatar.publicId)
+    }
+
+    const upload = await uploadImage({
+      buffer: req.file.buffer,
+      fileName: req.file.originalname,
+      folder: "Outfique/profileData",
+    });
+
+    profile.avatar = {
+      url: upload.url,
+      publicId: upload.fileId
+    }
+
+    await profile.save()
     return res.status(200).json({
-      success: true,
+      success: false,
+      message: "Avatar updated successfully",
       profile,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      error,
+      error: error.message,
     });
   }
 };
 
+const updateProfileController = async (req, res) => {
+  try {
+    const userid = req.user._id;
+    const profile = await profileModel.findOneAndUpdate(
+      { user: userid },
+      req.body,
+      { new: true, runValidators: true },
+    );
+    if (!profile) {
+      return res.status(404).json({
+        success: true,
+        message: "Profile not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      profile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+const deleteProfileController = async (req, res) => {
+  try {
+    const userid = req.user._id;
+    const profile = await profileModel.findOneAndDelete({ user: userid });
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Profile delete successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+const deleteAvatarController = async (req, res) => {
+  try {
+    const userid = req.user._id;
+    const profile = await profileModel.findOne({ user: userid });
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found",
+      });
+    }
+
+    profile.avatar = {
+      url: "avatar-default-user-profile-icon-simple-flat-vector-57234190.avif",
+      profileId: "",
+    };
+
+    await profile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Avatar removes successfully",
+      profile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 export {
-    addProfileDetailController,
-    getProfileDetailController
-}
+  createProfileController,
+  deleteAvatarController,
+  deleteProfileController,
+  getProfileController,
+  updateAvatarController,
+  updateProfileController,
+};

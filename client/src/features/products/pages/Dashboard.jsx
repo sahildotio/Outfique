@@ -12,6 +12,10 @@ const Dashboard = () => {
     handleGetSellerProduct();
   }, []);
 
+  useEffect(() => {
+    document.title = "Seller Dashboard | Outfique";
+  })
+
   return (
     <div
       className="min-h-screen bg-[#f0ede8] px-6 py-10 md:px-16 md:py-14"

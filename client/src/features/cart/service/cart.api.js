@@ -59,10 +59,10 @@ export const deleteCartItems = async({productId, variantId}) => {
     }
 }
 
-export const createCartOrder = async() => {
+export const createCartOrder = async({shippingAddress}) => {
     try {
-        const response = await apiCartInstance.post("/payment/create/order")
-        return response.data.order
+        const response = await apiCartInstance.post("/payment/create/order", {shippingAddress})
+        return response.data
     } catch (error) {
         throw error.message
     }

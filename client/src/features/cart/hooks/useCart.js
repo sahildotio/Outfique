@@ -1,10 +1,3 @@
-import {
-  addItems,
-  decrementItems,
-  deleteItems,
-  incrementItems,
-  setItems,
-} from "../state/cart.slice";
 import { useDispatch } from "react-redux";
 import {
   addToCart,
@@ -15,6 +8,12 @@ import {
   incrementCartItems,
   verifyCartOrderPayment,
 } from "../service/cart.api";
+import {
+  addItems,
+  decrementItems,
+  deleteItems,
+  incrementItems,
+} from "../state/cart.slice";
 
 export const useCart = () => {
   const dispatch = useDispatch();
@@ -46,21 +45,23 @@ export const useCart = () => {
     dispatch(deleteItems({ productId, variantId }));
   };
 
-  const handleAddToCartOrder = async () => {
-    const order = await createCartOrder();
+  const handleAddToCartOrder = async ({shippingAddress}) => {
+    const order = await createCartOrder({shippingAddress});
     return order;
   };
 
-    const handleVerifyCartOrderPayment = async ({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) => { 
-
-        const data = await verifyCartOrderPayment({
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature
-        })
-        return data
-
-    }
+  const handleVerifyCartOrderPayment = async ({
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+  }) => {
+    const data = await verifyCartOrderPayment({
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    });
+    return data;
+  };
   return {
     handleAddToCart,
     handleGetAllAddToCart,
@@ -68,6 +69,6 @@ export const useCart = () => {
     handleDecrementItems,
     handleDeleteItems,
     handleAddToCartOrder,
-    handleVerifyCartOrderPayment
+    handleVerifyCartOrderPayment,
   };
 };

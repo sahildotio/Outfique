@@ -1,29 +1,26 @@
 import express from "express"
 import { authMiddleware } from "../middlewares/user.middleware.js"
-import {addProfileDetailController, getProfileDetailController} from "../controllers/profile.controller.js"
+import {createProfileController, getProfileController, updateAvatarController, updateProfileController, deleteProfileController, deleteAvatarController} from "../controllers/profile.controller.js"
+import multer from "multer"
 
 const router = express.Router()
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+});
 
-/**
- * @POST method
- * @Api -> /api/profile/add-detail/:userid
- */
-
-router.get("/add-details", (req, res) => {
-  console.log("Hello world")
-})
-
-router.post(
-  "/add-details/:userid",
+router.post("/", authMiddleware, upload.single("avatar"), createProfileController)
+router.get("/", authMiddleware, getProfileController)
+router.patch("/", authMiddleware, updateProfileController)
+router.delete("/", authMiddleware, deleteProfileController)
+router.patch(
+  "/avatar",
   authMiddleware,
-  addProfileDetailController,
+  upload.single("avatar"),
+  updateAvatarController,
 );
-
-/**
- * @GET method
- * @Api -> /api/profile/get-detail/:userid
- */
-
-router.get("/get-details", authMiddleware, getProfileDetailController)
+router.patch("/avatar", authMiddleware, deleteAvatarController)
 
 export default router

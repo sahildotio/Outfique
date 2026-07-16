@@ -137,7 +137,7 @@ const CreateProduct = () => {
       });
 
       const data = await handleCreateProducts(fd);
-      console.log(data);
+      
 
       navigate("/seller/dashboard");
       setFormData({
@@ -159,7 +159,9 @@ const CreateProduct = () => {
       setSubmitting(false);
     }
   };
-
+  useEffect(() => {
+    document.title = "Create Product | Outfique Seller";
+  })
   return (
     <div className="min-h-screen w-full bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-colors">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12 lg:py-16">

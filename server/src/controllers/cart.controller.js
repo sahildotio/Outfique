@@ -3,117 +3,117 @@ import configure from "../config/config.js";
 import { getCartByUserId } from "../dao/cart.dao.js";
 import { stockVariant } from "../dao/product.dao.js";
 import carts from "../models/cart.models.js";
+import orders from "../models/order.model.js";
 import payments from "../models/payment.model.js";
 import products from "../models/product.models.js";
+import addressModel from "../models/address.model.js";
 import { createOrder } from "../services/payment.service.js";
 
 const addToCartController = async (req, res) => {
- 
-    const { productId, variantId } = req.params;
-    const { quantity, size } = req.body;
+  const { productId, variantId } = req.params;
+  const { quantity, size } = req.body;
 
-    const product = await products.findOne({
-      _id: productId,
-      "variants._id": variantId,
+  const product = await products.findOne({
+    _id: productId,
+    "variants._id": variantId,
+  });
+
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      message: "Product not found",
     });
+  }
 
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
+  const stock = await stockVariant(productId, variantId);
 
-    const stock = await stockVariant(productId, variantId);
+  let cart = await carts.findOne({
+    user: req.user._id,
+  });
 
-    let cart = await carts.findOne({
+  if (!cart) {
+    cart = await carts.create({
       user: req.user._id,
+      items: [],
     });
+  }
 
-    if (!cart) {
-      cart = await carts.create({
-        user: req.user._id,
-        items: [],
-      });
-    }
+  const isProductAlreadyInCart = cart.items.find(
+    (item) =>
+      item.product?.toString() === productId &&
+      item.variant?.toString() === variantId,
+  );
 
-    const isProductAlreadyInCart = cart.items.find(
+  if (isProductAlreadyInCart) {
+    const quantityInCart = cart.items.find(
       (item) =>
-        item.product?.toString() === productId &&
-        item.variant?.toString() === variantId,
+        item.product.toString() === productId &&
+        item.variant.toString() === variantId,
     );
 
-    if (isProductAlreadyInCart) {
-      const quantityInCart = cart.items.find(
-        (item) =>
-          item.product.toString() === productId &&
-          item.variant.toString() === variantId,
-      );
-
-      if (quantityInCart + quantity > stock) {
-        return res.status(400).json({
-          success: false,
-          message: `Only ${stock} items left in stock and you already have ${quantityInCart} in cart`,
-        });
-      }
-
-      await carts.findOneAndUpdate(
-        {
-          user: req.user._id,
-          "items.productId": productId,
-          "items.variantId": variantId,
-        },
-        {
-          $inc: { "items.$.quantity": quantity },
-        },
-        {
-          new: true,
-        },
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Product updated in cart",
-        cart,
-      });
-    }
-
-    if (quantity > stock) {
+    if (quantityInCart + quantity > stock) {
       return res.status(400).json({
         success: false,
-        message: `Only ${stock} items left in stock`,
+        message: `Only ${stock} items left in stock and you already have ${quantityInCart} in cart`,
       });
     }
 
-    const existingItem = cart.items.find(
-      (item) =>
-        item.productId.toString() === productId &&
-        item.variantId.toString() === variantId &&
-        item.size === size,
+    await carts.findOneAndUpdate(
+      {
+        user: req.user._id,
+        "items.productId": productId,
+        "items.variantId": variantId,
+      },
+      {
+        $inc: { "items.$.quantity": quantity },
+      },
+      {
+        new: true,
+      },
     );
-
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      cart.items.push({
-        productId,
-        variantId,
-        quantity,
-        size,
-        price: product.variants.find(
-          (variant) => variant._id.toString() === variantId,
-        ).price,
-      });
-    }
-
-    await cart.save();
 
     return res.status(200).json({
       success: true,
-      message: "Product added to cart",
+      message: "Product updated in cart",
       cart,
     });
- 
+  }
+
+  if (quantity > stock) {
+    return res.status(400).json({
+      success: false,
+      message: `Only ${stock} items left in stock`,
+    });
+  }
+
+  const existingItem = cart.items.find(
+    (item) =>
+      item.productId.toString() === productId &&
+      item.variantId.toString() === variantId &&
+      item.size === size,
+  );
+
+  if (existingItem) {
+    existingItem.quantity += quantity;
+  } else {
+    cart.items.push({
+      productId,
+      variantId,
+      quantity,
+      size,
+      price: product.variants.find(
+        (variant) => variant._id.toString() === variantId,
+      ).price,
+    });
+  }
+
+  await cart.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Product added to cart",
+    cart,
+  });
 };
 
 const getAllCartController = async (req, res) => {
@@ -318,51 +318,89 @@ const deleteQuantityController = async (req, res) => {
 const createOrderController = async (req, res) => {
   const cart = await getCartByUserId(req.user._id);
 
-  if (!cart) {
+  if (!cart || cart.items.length === 0) {
     return res.status(404).json({
       success: false,
       message: "Cart not found",
     });
   }
 
-  const order = await createOrder({
+  const { shippingAddress } = req.body;
+  const address = await addressModel.findOne({
+    _id: shippingAddress,
+    user: req.user._id
+  })
+  if (!address) {
+    return res.status(404).json({
+      success: false,
+      message: "Address not found"
+    })
+  }
+  const dbOrder = await orders.create({
+    buyer: req.user._id,
+
+    items: cart.items.map((item) => {
+      const variant = item.productId.variants.id(item.variantId);
+      if (!variant) {
+        throw new Error("Variant not found");
+      }
+
+      return {
+        product: item.productId._id,
+        seller: item.productId.seller,
+        variant: item.variantId,
+        size: item.size,
+        quantity: item.quantity,
+        price: variant.price.amount,
+        totalPrice: variant.price.amount * item.quantity,
+      };
+    }),
+
+    shippingAddress: {
+      fullName: address.fullName,
+      phone: address.phone,
+      address: address.address,
+      city: address.city,
+      state: address.state,
+      country: address.country,
+      postalCode: address.postalCode
+    },
+    subTotal: cart.totalPrice,
+    shippingCharge: 0,
+    discount: 0,
+    totalAmount: cart.totalPrice,
+
+    paymentMethod: "RAZORPAY",
+    paymentStatus: "PENDING",
+    orderStatus: "PENDING",
+  });
+
+  const razorpayOrder = await createOrder({
     amount: cart.totalPrice,
     currency: cart.currency,
   });
 
   const paymentDets = await payments.create({
     user: req.user._id,
+    order: dbOrder._id,
     razorpay: {
-      orderId: order.id,
+      orderId: razorpayOrder.id,
     },
     price: {
       amount: cart.totalPrice,
       currency: cart.currency,
     },
-    orderItems: cart.items.map((item) => {
-      return {
-        title: item.productId?.title,
-        productId: item.productId?._id,
-        variantId: item.variantId,
-        quantity: item.quantity,
-        Image: item.productId?.productImages[0]?.url,
-        price: {
-          amount:
-            item.productId.variants.price.amount || item.product.price.amount,
-          currency:
-            item.productId.variants.price.currency ||
-            item.product.price.currency,
-        },
-        description: item.productId?.description,
-      };
-    }),
-    orderStatus: "Processing",
+    status: "PENDING",
   });
+
+  dbOrder.payment = paymentDets._id;
+  await dbOrder.save();
 
   return res.status(200).json({
     success: true,
     message: "Order created successfully",
-    order,
+    order: dbOrder,
+    razorpayOrder,
     paymentDets,
   });
 };
@@ -374,7 +412,7 @@ const verifyOrderPaymentController = async (req, res) => {
 
     const payment = await payments.findOne({
       "razorpay.orderId": razorpay_order_id,
-      status: "pending",
+      status: "PENDING",
     });
 
     if (!payment) {
@@ -394,21 +432,54 @@ const verifyOrderPaymentController = async (req, res) => {
     );
 
     if (!isPaymentValid) {
-      payment.status = "failed";
+      payment.status = "FAILED";
+      
       await payment.save();
 
+      const order = await orders.findById(payment.order)
+
+      if (order) {
+        order.paymentStatus = "FAILED";
+        order.orderStatus = "CANCELLED";
+
+        await order.save()
+      }
       return res.status(400).json({
         success: false,
         message: "Payment verification failed",
       });
     }
+    const order = await orders.findById(payment.order);
 
-    payment.status = "completed";
+    order.paymentStatus = "PAID";
+    order.orderStatus = "CONFIRMED";
+
+    payment.status = "PAID";
     payment.razorpay.paymentId = razorpay_payment_id;
     payment.razorpay.signature = razorpay_signature;
 
     await payment.save();
+    await order.save();
 
+    const cart = await carts.findOne({user: req.user._id})
+    if(cart){
+      cart.items = []
+      await cart.save()
+    }
+
+    for (const item of order.items) {
+      const product = await products.findById(item.product)
+      if (!product) {
+        continue
+      }
+      const variant = product.variants.id(item.variant)
+      if (!variant) {
+        continue
+      }
+      variant.stock -= item.quantity
+      await product.save()
+    }
+    
     return res.status(200).json({
       success: true,
       message: "Payment verified successfully",
@@ -421,7 +492,6 @@ const verifyOrderPaymentController = async (req, res) => {
     });
   }
 };
-
 export {
   addToCartController,
   createOrderController,

@@ -28,15 +28,18 @@ const ProductCard = ({ product, wishlisted, onToggleWishlist }) => {
   const colors = (product?.variants ?? [])
     .map((v) => v?.attributes?.color)
     .filter(Boolean);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
-    <div className="group flex flex-col gap-3">
+    <div className="group flex flex-col">
+      {/* image — full width so cards line up cleanly in the grid */}
       <div
         onClick={() => {
-          navigate(`/product/${product?.category?.slug}/${product?.productSlug}`);
+          navigate(
+            `/product/${product?.category?.slug}/${product?.productSlug}`,
+          );
         }}
-        className="relative aspect-[3/4] w-[75%] overflow-hidden rounded-3xl dark:bg-zinc-900 bg-stone-100 cursor-pointer"
+        className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl bg-stone-100 dark:bg-zinc-900 cursor-pointer"
       >
         <img
           src={image}
@@ -45,18 +48,8 @@ const ProductCard = ({ product, wishlisted, onToggleWishlist }) => {
           draggable={false}
         />
 
-        {/* bottom-up scrim */}
-        <div
-          className="pointer-events-none absolute inset-0
-bg-gradient-to-t
-from-black/70
-via-black/10
-to-transparent
-opacity-0
-transition-opacity
-duration-500
-group-hover:opacity-100"
-        />
+        {/* subtle scrim on hover, just enough to lift the heart icon */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
         {/* wishlist */}
         <button
@@ -71,40 +64,32 @@ group-hover:opacity-100"
           <HeartIcon filled={wishlisted} />
         </button>
 
-        {/* price + swatches — slide up from below the fold */}
-        <div className="absolute inset-x-3 bottom-3 flex translate-y-4 items-center justify-between opacity-0 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 group-hover:opacity-100">
-          <span className="text-[14px] font-semibold text-white">
-            {formatPrice(product?.price?.amount)}
-          </span>
-          {colors.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              {colors.map((color, i) => (
-                <span
-                  key={`${product._id}-swatch-${i}`}
-                  className="h-3.5 w-3.5 rounded-full ring-1 ring-white/70"
-                  style={{ backgroundColor: color.toLowerCase() }}
-                  title={color}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* color swatches — bottom-left overlay on hover */}
+        {colors.length > 0 && (
+          <div className="absolute inset-x-3 bottom-3 flex translate-y-2 items-center gap-1.5 opacity-0 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 group-hover:opacity-100">
+            {colors.map((color, i) => (
+              <span
+                key={`${product._id}-swatch-${i}`}
+                className="h-3.5 w-3.5 rounded-full ring-1 ring-white/70"
+                style={{ backgroundColor: color.toLowerCase() }}
+                title={color}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* title stays visible at all times */}
-      <div className="flex flex-col gap-0.5 px-1">
-        <p
-          className="text-[11px] font-medium uppercase tracking-[0.12em]
-text-gray-500 dark:text-gray-400"
-        >
+      {/* info block — always visible, aligned in a fixed order under the image */}
+      <div className="mt-3 flex flex-col gap-0.5">
+        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
           {product?.category?.name}
         </p>
-        <h3
-          className="text-[15px] font-medium leading-snug
-text-gray-900 dark:text-white"
-        >
+        <h3 className="text-[15px] font-medium leading-snug text-gray-900 dark:text-white">
           {product?.title}
         </h3>
+        <span className="mt-0.5 text-[14px] font-semibold text-gray-900 dark:text-white">
+          {formatPrice(product?.price?.amount)}
+        </span>
       </div>
     </div>
   );
@@ -114,15 +99,16 @@ text-gray-900 dark:text-white"
 const ProductCardSkeleton = () => (
   <div className="flex flex-col gap-3">
     <div className="aspect-[3/4] w-full animate-pulse rounded-3xl bg-gray-200 dark:bg-zinc-800" />
-    <div className="flex flex-col gap-2 px-1">
-      <div className="h-2.5 w-16 animate-pulse rounded-full bg-stone-100" />
-      <div className="h-3.5 w-32 animate-pulse rounded-full bg-stone-100" />
+    <div className="flex flex-col gap-2">
+      <div className="h-2.5 w-16 animate-pulse rounded-full bg-stone-100 dark:bg-zinc-800" />
+      <div className="h-3.5 w-32 animate-pulse rounded-full bg-stone-100 dark:bg-zinc-800" />
+      <div className="h-3.5 w-14 animate-pulse rounded-full bg-stone-100 dark:bg-zinc-800" />
     </div>
   </div>
 );
 
 // ── Product Grid ──────────────────────────────────────────────────────────
-export const Product = ({products: initialProducts}) => {
+export const Product = ({ products: initialProducts }) => {
   const [products, setProducts] = useState(initialProducts || []);
   const [loading, setLoading] = useState(!initialProducts);
   const [wishlist, setWishlist] = useState({});
@@ -144,31 +130,31 @@ export const Product = ({products: initialProducts}) => {
   useEffect(() => {
     if (initialProducts) {
       setProducts(initialProducts);
-      setLoading(false)
+      setLoading(false);
     }
   }, [initialProducts]);
 
   const { handleAddWishlist } = useWishlist();
 
   const toggleWishlist = async (productId, variantId) => {
-    try{
-      await handleAddWishlist(productId, variantId)
+    try {
+      await handleAddWishlist(productId, variantId);
       setWishlist((prev) => ({
         ...prev,
         [productId]: !prev[productId],
-      }))
+      }));
     } catch (error) {
-      console.log(error.message)
+      console.log(error.message);
     }
-  }
+  };
 
   useEffect(() => {
-      document.title = "Men's Fashion | Premium Clothing & Accessories";
-  })
-  
+    document.title = "Men's Fashion | Premium Clothing & Accessories";
+  });
+
   return (
     <div className="mx-auto max-w-[1400px] px-3 py-6 sm:px-6 lg:px-12 transition-colors duration-300">
-      <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
         {loading
           ? Array.from({ length: 8 }, (_, i) => <ProductCardSkeleton key={i} />)
           : products.map((product) => (

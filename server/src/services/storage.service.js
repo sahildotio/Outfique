@@ -19,3 +19,8 @@ export const uploadImage = async ({ buffer, fileName, folder= "Outfique"}) => {
         throw new Error(error.message)
     }
 }
+
+export const deleteImage = async (fileId) => {
+    await client.files.delete(fileId)
+    return true
+}

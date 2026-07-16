@@ -12,6 +12,7 @@ const CategoryWiseProduct = () => {
     const res = await handleGetProductBySlug(slug);
     setProductData(res);
   };
+
   useEffect(() => {
     if (slug) {
       fetchProductData();
@@ -29,8 +30,16 @@ const CategoryWiseProduct = () => {
   }
 
   return (
-    <div className="flex flex-col gap-5 px-4">
-      <Product products={productData} />
+    <div>
+      <div className="filteration">
+        
+      </div>
+      <div className="allProducts">
+        <div className="flex flex-col gap-5 px-4">
+          <h1>{slug}</h1>
+          <Product products={productData} />
+        </div>
+      </div>
     </div>
   );
 };

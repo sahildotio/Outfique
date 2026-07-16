@@ -129,7 +129,7 @@ const getAllProductsController = async (req, res) => {
     products
       .find(filter)
       .populate("category")
-      .populate("seller", "fullName")
+      .populate("seller", "fullName email")
       .sort(sortOptions)
       .skip(skip)
       .limit(limit),
@@ -180,7 +180,7 @@ const getProductByIdController = async (req, res) => {
  */
 
 const addProductVariantController = async (req, res) => {
-  try {
+
     const productId = req.params.productId;
     const product = await products.findOne({
       _id: productId,
@@ -235,13 +235,7 @@ const addProductVariantController = async (req, res) => {
         color
       },
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
+  
 };
 
 const getSearchController = async (req, res) => {
@@ -317,7 +311,7 @@ const getProductBySlugController = async (req, res) => {
   const { slug, productSlug } = req.params;
   const { color, size } = req.query;
 
-  const product = await products.findOne({ productSlug }).populate("category");
+  const product = await products.findOne({ productSlug }).populate("category").populate("seller", "fullName email contact");
 
   if (!product) {
     return res.status(404).json({

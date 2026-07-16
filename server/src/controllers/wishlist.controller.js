@@ -89,7 +89,7 @@ const deleteWishlistController = async (req, res) => {
   });
 
   if (!wishlist) {
-    return res.statue(400).json({
+    return res.status(400).json({
       success: false,
       message: "Items not found in wishlist",
     });
