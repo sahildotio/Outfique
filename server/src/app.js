@@ -12,6 +12,8 @@ import profileRoutes from "./routes/profile.routes.js"
 import wishlistRoutes from "./routes/wishlist.routes.js"
 import categoryRoutes from "./routes/category.routes.js"
 import addressRoutes from "./routes/address.routes.js"
+import buyerOrderRoutes from "./routes/buyerOrder.routes.js"
+import sellerOrderRoutes from "./routes/sellerOrder.routes.js"
 
 const app = express();
 
@@ -73,5 +75,18 @@ app.use("/api/category", categoryRoutes)
  */
 
 app.use("/api/address", addressRoutes)
+/**
+ * @order_management
+ * @Buyer Order
+ */
+
+app.use("/api/buyer/order", buyerOrderRoutes)
+
+/**
+ * @order_management
+ * @Seller order
+ */
+
+app.use("/api/seller/order", sellerOrderRoutes)
 
 export default app;

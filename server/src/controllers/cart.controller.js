@@ -368,11 +368,14 @@ const createOrderController = async (req, res) => {
     orderStatus: "PENDING",
   });
 
+  console.log("Cart Total:", cart.totalPrice);
+  console.log("Cart Currency:", cart.currency);
+
   const razorpayOrder = await createOrder({
     amount: cart.totalPrice,
     currency: cart.currency,
   });
-
+  console.log(razorpayOrder);
   const paymentDets = await payments.create({
     user: req.user._id,
     order: dbOrder._id,
@@ -484,7 +487,8 @@ const verifyOrderPaymentController = async (req, res) => {
       error: error.message,
     });
   }
-};
+}
+
 export {
   addToCartController,
   createOrderController,
@@ -492,5 +496,5 @@ export {
   deleteQuantityController,
   getAllCartController,
   incrementQuantityController,
-  verifyOrderPaymentController,
-};
+  verifyOrderPaymentController
+}

@@ -303,14 +303,19 @@ const SellerProductDetail = () => {
               className="grid md:grid-cols-2 gap-10 mb-14"
             >
               <div className="grid grid-cols-2 gap-3">
-                {product.productImages?.map((img) => (
+                {product.productImages?.map((img, index) => (
                   <div
-                    key={img._id}
+                    key={img._id || index}
                     className="rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-900"
                   >
                     <img
-                      src={img.url}
-                      alt=""
+                      src={img.url || img.preview}
+                      alt={product.title}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "https://placehold.co/600x800?text=No+Image";
+                      }}
                       className="w-full h-[240px] object-cover hover:scale-105 transition-transform duration-500"
                     />
                   </div>
@@ -636,7 +641,7 @@ const SellerProductDetail = () => {
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
 
-                        <div className="aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-800">
+                        <div className="aspect-[16/10] overflow-hidden bg-stone-100 dark:bg-stone-800 rounded-t-2xl">
                           <img
                             src={
                               variant.productImages?.[0]?.url ||

@@ -62,7 +62,7 @@ export const deleteCartItems = async({productId, variantId}) => {
 export const createCartOrder = async() => {
     try {
         const response = await apiCartInstance.post("/payment/create/order")
-        return response.data
+        return response.data.razorpayOrder;
     } catch (error) {
         throw error.message
     }

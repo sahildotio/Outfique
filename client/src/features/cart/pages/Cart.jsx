@@ -197,7 +197,9 @@ const Cart = () => {
       shippingAddress: selectedAddress._id,
     });
     console.log(order);
-
+    console.log(order.amount);
+    console.log(order.currency);
+    console.log(order.id);
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: order.amount,
