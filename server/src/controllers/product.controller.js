@@ -340,7 +340,7 @@ const deleteVariantController = async (req, res) => {
     const { variantId } = req.params;
     const sellerId = req.user._id;
 
-    const product = await products.findOneAndUpdate(
+    const product = await products.findOneAndReplace(
       {
         seller: sellerId,
         "variants._id": variantId,

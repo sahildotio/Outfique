@@ -54,16 +54,26 @@ const Wishlist = () => {
   const handleMoveToBag = async (item, size) => {
     try {
       setMovingIds((prev) => ({ ...prev, [item._id]: true }));
-      await handleAddToCart(item.productId._id, item.variantId, size);
+
+      await handleAddToCart({
+        productId: item.productId._id,
+        variantId: item.variantId,
+        size,
+      });
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+
       const res = await handleDeleteWishlist(
         item.productId._id,
         item.variantId,
       );
+
       if (res?.success) {
         setWishlistData((prev) => prev.filter((i) => i._id !== item._id));
       }
-    } catch (error) {
-      console.log(error.message);
     } finally {
       setMovingIds((prev) => ({ ...prev, [item._id]: false }));
     }
@@ -106,6 +116,8 @@ const Wishlist = () => {
     selectedProduct?.productImages?.[0]?.url;
   const availableSizes = selectedVariant?.attributes?.size || [];
 
+  console.log("Wishlist", wishlistData)
+  
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
       <h1 className="mb-5 text-lg font-medium text-zinc-900 dark:text-white sm:mb-6 sm:text-xl">

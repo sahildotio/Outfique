@@ -58,7 +58,7 @@ const addToCartController = async (req, res) => {
       });
     }
 
-    await carts.findOneAndUpdate(
+    await carts.findOneAndReplace(
       {
         user: req.user._id,
         "items.productId": productId,
@@ -175,7 +175,7 @@ const incrementQuantityController = async (req, res) => {
       });
     }
 
-    await carts.findOneAndUpdate(
+    await carts.findOneAndReplace(
       {
         user: req.user._id,
         "items.productId": productId,
@@ -252,7 +252,7 @@ const decrementQuantityController = async (req, res) => {
       });
     }
 
-    await carts.findOneAndUpdate(
+    await carts.findOneAndReplace(
       {
         user: req.user._id,
         "items.productId": productId,
@@ -297,7 +297,7 @@ const deleteQuantityController = async (req, res) => {
     });
   }
 
-  await carts.findOneAndUpdate(
+  await carts.findOneAndReplace(
     { user: req.user._id },
     {
       $pull: {

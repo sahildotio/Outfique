@@ -48,7 +48,7 @@ const createAddressController = async (req, res) => {
       isDefault: addressCount === 0 ? true : isDefault,
     });
 
-    await profileModel.findOneAndUpdate(
+    await profileModel.findOneAndReplace(
       { user: userid },
       { $push: { addresses: address._id } },
     );
@@ -190,7 +190,7 @@ const deleteAddressController = async (req, res) => {
     try {
         const { addressId } = req.params
         const userid = req.user._id
-        const address = await addressModel.findOneAndUpdate({
+        const address = await addressModel.findOneAndReplace({
             _id: addressId,
             user: userid
         })

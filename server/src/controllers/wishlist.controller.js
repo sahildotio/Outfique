@@ -95,7 +95,7 @@ const deleteWishlistController = async (req, res) => {
     });
   }
 
-  await wishLists.findOneAndUpdate(
+  await wishLists.findOneAndReplace(
     { user: req.user._id },
     {
       $pull: {

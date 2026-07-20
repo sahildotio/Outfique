@@ -100,7 +100,7 @@ const updateAvatarController = async (req, res) => {
 const updateProfileController = async (req, res) => {
   try {
     const userid = req.user._id;
-    const profile = await profileModel.findOneAndUpdate(
+    const profile = await profileModel.findOneAndReplace(
       { user: userid },
       req.body,
       { new: true, runValidators: true },
