@@ -40,6 +40,13 @@ const productSchema = new Schema(
       type: String,
       unique: true,
     },
+    shipping: {
+      estimatedDeliveryDays: {
+        type: Number,
+        default: 5,
+        min: 1
+      },
+    },
   },
   {
     timestamps: true,

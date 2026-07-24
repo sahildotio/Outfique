@@ -8,7 +8,7 @@ const razorpay = new Razorpay({
 
 export const createOrder = async ({amount, currency="INR"}) => {
     const options = {
-        amount: Math.round(amount * 100), //amount in the smallest currency unit
+        amount: Math.round(amount * 100), 
         currency,
     }
     const order = await razorpay.orders.create(options)

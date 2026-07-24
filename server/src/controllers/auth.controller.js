@@ -254,7 +254,7 @@ const forgotPasswordController = async (req, res) => {
   }
 
   const user = await users.findOne({ email });
-
+  console.log("Sending OTP to:", user.email);
   if (!user) {
     return res.status(404).json({
       success: false,
@@ -275,77 +275,92 @@ const forgotPasswordController = async (req, res) => {
   });
   await user.save();
 
-  await sendEmail(
-    user.email,
-    "Reset Password OTP",
-    `Your OTP is ${otp}. It is valid for 5 minutes.`,
-    `
-  <div style="background-color:#f5f5f4; padding:40px 20px; font-family: Helvetica, Arial, sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; margin:0 auto; background-color:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #e7e5e4;">
-      <tr>
-        <td style="padding:40px 40px 20px 40px; text-align:center;">
-          <p style="margin:0; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#78716c;">Outfique</p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:0 40px;">
-          <div style="height:1px; background-color:#e7e5e4;"></div>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:32px 40px 8px 40px;">
-          <h1 style="margin:0; font-size:20px; font-weight:600; color:#1c1917; text-align:center;">
-            Reset your password
-          </h1>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:8px 40px 0 40px;">
-          <p style="margin:0; font-size:14px; line-height:1.6; color:#57534e; text-align:center;">
-            Hello ${user.fullName}, use the code below to reset your password.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:28px 40px 8px 40px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="background-color:#fafaf9; border:1px solid #e7e5e4; border-radius:12px; padding:22px; text-align:center;">
-                <p style="margin:0; font-size:32px; font-weight:600; letter-spacing:10px; color:#1c1917;">
-                  ${otp}
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:16px 40px 0 40px;">
-          <p style="margin:0; font-size:12px; color:#a8a29e; text-align:center;">
-            This code expires in <strong style="color:#57534e;">5 minutes</strong>.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:28px 40px 0 40px;">
-          <div style="height:1px; background-color:#e7e5e4;"></div>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:20px 40px 40px 40px;">
-          <p style="margin:0; font-size:12px; line-height:1.6; color:#a8a29e; text-align:center;">
-            Didn't request this? You can safely ignore this email — your password will remain unchanged.
-          </p>
-        </td>
-      </tr>
-    </table>
-    <p style="margin:24px 0 0 0; font-size:11px; color:#a8a29e; text-align:center;">
-      © ${new Date().getFullYear()} Outfique. All rights reserved.
-    </p>
-  </div>
-  `,
-  );
+  // await sendEmail(
+  //   user.email,
+  //   "Reset Password OTP",
+  //   `Your OTP is ${otp}. It is valid for 5 minutes.`,
+  //   `
+  // <div style="background-color:#f5f5f4; padding:40px 20px; font-family: Helvetica, Arial, sans-serif;">
+  //   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; margin:0 auto; background-color:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #e7e5e4;">
+  //     <tr>
+  //       <td style="padding:40px 40px 20px 40px; text-align:center;">
+  //         <p style="margin:0; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#78716c;">Outfique</p>
+  //       </td>
+  //     </tr>
+  //     <tr>
+  //       <td style="padding:0 40px;">
+  //         <div style="height:1px; background-color:#e7e5e4;"></div>
+  //       </td>
+  //     </tr>
+  //     <tr>
+  //       <td style="padding:32px 40px 8px 40px;">
+  //         <h1 style="margin:0; font-size:20px; font-weight:600; color:#1c1917; text-align:center;">
+  //           Reset your password
+  //         </h1>
+  //       </td>
+  //     </tr>
+  //     <tr>
+  //       <td style="padding:8px 40px 0 40px;">
+  //         <p style="margin:0; font-size:14px; line-height:1.6; color:#57534e; text-align:center;">
+  //           Hello ${user.fullName}, use the code below to reset your password.
+  //         </p>
+  //       </td>
+  //     </tr>
+  //     <tr>
+  //       <td style="padding:28px 40px 8px 40px;">
+  //         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+  //           <tr>
+  //             <td style="background-color:#fafaf9; border:1px solid #e7e5e4; border-radius:12px; padding:22px; text-align:center;">
+  //               <p style="margin:0; font-size:32px; font-weight:600; letter-spacing:10px; color:#1c1917;">
+  //                 ${otp}
+  //               </p>
+  //             </td>
+  //           </tr>
+  //         </table>
+  //       </td>
+  //     </tr>
+  //     <tr>
+  //       <td style="padding:16px 40px 0 40px;">
+  //         <p style="margin:0; font-size:12px; color:#a8a29e; text-align:center;">
+  //           This code expires in <strong style="color:#57534e;">5 minutes</strong>.
+  //         </p>
+  //       </td>
+  //     </tr>
+  //     <tr>
+  //       <td style="padding:28px 40px 0 40px;">
+  //         <div style="height:1px; background-color:#e7e5e4;"></div>
+  //       </td>
+  //     </tr>
+  //     <tr>
+  //       <td style="padding:20px 40px 40px 40px;">
+  //         <p style="margin:0; font-size:12px; line-height:1.6; color:#a8a29e; text-align:center;">
+  //           Didn't request this? You can safely ignore this email — your password will remain unchanged.
+  //         </p>
+  //       </td>
+  //     </tr>
+  //   </table>
+  //   <p style="margin:24px 0 0 0; font-size:11px; color:#a8a29e; text-align:center;">
+  //     © ${new Date().getFullYear()} Outfique. All rights reserved.
+  //   </p>
+  // </div>
+  // `,
+  // );
+  try {
+    await sendEmail(
+      user.email,
+      "Reset Password OTP",
+      `Your OTP is ${otp}`,
+      html,
+    );
 
+    console.log("Email sent");
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send email",
+      error: error.message,
+    });
+  }
   return res.status(200).json({
     success: true,
     message: "OTP sent to your email successfully.",

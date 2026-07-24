@@ -341,8 +341,6 @@ const createOrderController = async (req, res) => {
 
     items: cart.items.map((item) => {
       const variant = Array.isArray(item.productId.variants) ? item.productId.variants.find((v) => v._id.equals(item.variantId)) : item.productId.variants
-
-      console.log(variant)
       
       if (!variant) {
         throw new Error("Variant not found")

@@ -221,7 +221,7 @@ const Navbar = () => {
           {isSeller && (
             <div className="hidden md:flex items-center gap-4 ml-1 flex-shrink-0">
               <Link
-                to="/seller/dashboard."
+                to="/seller/dashboard"
                 className="text-[10px] font-bold tracking-[0.18em] uppercase text-zinc-400 dark:text-zinc-500 hover:text-[#e63b1f] transition-colors duration-200"
               >
                 Dashboard

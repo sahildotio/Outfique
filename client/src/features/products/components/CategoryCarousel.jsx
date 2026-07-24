@@ -1,199 +1,182 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useProduct } from "../hooks/useProduct";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router";
 
-const CategoryCarousel = () => {
-  const { handleGetAllCategory } = useProduct();
-
-  const [categoryData, setCategoryData] = useState([]);
-  const [activeIdx, setActiveIdx] = useState(0);
-
-  const intervalRef = useRef(null);
-  const isAnimating = useRef(false);
-
-  // ---------------- Fetch ----------------
-  useEffect(() => {
-    const fetchCategoryData = async () => {
-      try {
-        const res = await handleGetAllCategory();
-        setCategoryData(res || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchCategoryData();
-  }, []);
-
-  const total = categoryData.length;
-
-  // ---------------- Navigation ----------------
-  const go = (dir) => {
-    if (isAnimating.current || total <= 1) return;
-    isAnimating.current = true;
-    setActiveIdx((prev) => (prev + dir + total) % total);
-    setTimeout(() => (isAnimating.current = false), 500);
-  };
-
-  // ---------------- Auto Scroll ----------------
-  useEffect(() => {
-    if (!total) return;
-    intervalRef.current = setInterval(() => go(1), 3000);
-    return () => clearInterval(intervalRef.current);
-  }, [total]);
-
-  const pauseAuto = () => clearInterval(intervalRef.current);
-  const resumeAuto = () => {
-    clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => go(1), 3000);
-  };
-
-  if (!total) return null;
-
-  const getCard = (offset) =>
-    categoryData[(activeIdx + offset + total) % total];
-
-  const slots = [
+const slides = [
+  [
     {
-      offset: -2,
-      width: "w-[70px] md:w-[90px]",
-      height: "h-[180px] md:h-[230px]",
-      opacity: 0.35,
-      scale: 0.8,
-      blur: true,
-      z: 1,
+      title: "NEW THIS WEEK",
+      image:
+        "https://d2d5n4ft74bagm.cloudfront.net/media/banners/c39322c5-ce8c-4a00-b351-ec19135e3a75/1784292515.png?w=90",
+      path: "/shirts",
     },
     {
-      offset: -1,
-      width: "w-[140px] md:w-[180px]",
-      height: "h-[300px] md:h-[380px]",
-      opacity: 0.7,
-      scale: 0.92,
-      blur: false,
-      z: 2,
+      title: "FOR THE FRIDAYS",
+      image:
+        "https://d2d5n4ft74bagm.cloudfront.net/media/shop-by-occasion/85c52675-d3ab-4a07-822e-127ab173e314/1780918798.jpeg?w=90",
+      path: "/pants",
     },
     {
-      offset: 0,
-      width: "w-[320px] md:w-[480px] lg:w-[620px]",
-      height: "h-[340px] md:h-[420px] lg:h-[500px]",
-      opacity: 1,
-      scale: 1,
-      blur: false,
-      z: 5,
+      title: "LINEN EDIT",
+      subtitle: "SOFT ON SKIN. SHARP ON STYLE.",
+      image:
+        "https://i.pinimg.com/736x/f2/66/5d/f2665dd75ab5c2d27002a3adb9298a93.jpg",
+      path: "/shoes",
+    },
+  ],
+  [
+    {
+      title: "DENIM DROP",
+      image:
+        "https://i.pinimg.com/736x/94/bf/2f/94bf2f1dfcd45550da8df69cbba6dfe9.jpg",
+      path: "/jeans",
     },
     {
-      offset: 1,
-      width: "w-[150px] md:w-[150px]",
-      height: "h-[360px] md:h-[340px]",
-      opacity: 0.7,
-      scale: 0.92,
-      blur: false,
-      z: 2,
+      title: "OFFICE READY",
+      image:
+        "https://i.pinimg.com/vwebp/736x/48/c9/48/48c948f46d8691a7b4c717b934fba778.webp",
+      path: "/trousers",
     },
     {
-      offset: 2,
-      width: "w-[70px] md:w-[90px]",
-      height: "h-[180px] md:h-[230px]",
-      opacity: 0.35,
-      scale: 0.8,
-      blur: true,
-      z: 1,
+      title: "STREET CARGO",
+      image:
+        "https://i.pinimg.com/736x/36/6d/fd/366dfdd66097d9757313b1c1c9dc494e.jpg",
+      path: "/cargos",
     },
-  ];
+  ],
+];
+
+const AUTO_DELAY = 4000;
+
+/* ---------------- Lazy Image ---------------- */
+
+const LazyImage = ({ src, alt, className }) => {
+  const [loaded, setLoaded] = useState(false);
 
   return (
-    <div
-      className="w-full py-10 select-none overflow-hidden"
-      onMouseEnter={pauseAuto}
-      onMouseLeave={resumeAuto}
-    >
-      {/* ── Carousel + Arrows ── */}
-      <div className="relative flex justify-center items-center gap-4 md:gap-6">
-        {/* ── Left Arrow ── */}
-        <button
-          onClick={() => go(-1)}
-          aria-label="Previous"
-          className="absolute left-4 md:left-8 z-20 flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/90 dark:bg-stone-800/90 text-stone-800 dark:text-white shadow-lg hover:scale-110 active:scale-95 transition-transform backdrop-blur-sm"
-        >
-          <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-        </button>
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gray-200 dark:bg-gray-700" />
+      )}
 
-        {/* ── Cards ── */}
-        {slots.map((slot) => {
-          const cat = getCard(slot.offset);
-          const isCenter = slot.offset === 0;
-          const isLeft = slot.offset < 0;
-          const isRight = slot.offset > 0;
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        onLoad={() => setLoaded(true)}
+        className={`${className} transition-opacity duration-500 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
+      />
+    </>
+  );
+};
 
-          return (
-            <motion.div
-              key={`${cat._id}-${slot.offset}`}
-              layout
-              onClick={() => {
-                if (isLeft) go(-1);
-                if (isRight) go(1);
-              }}
-              animate={{ opacity: slot.opacity, scale: slot.scale }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-              style={{
-                zIndex: slot.z,
-                filter: slot.blur ? "blur(2px)" : "none",
-              }}
-              className={`
-                ${slot.width} ${slot.height}
-                relative overflow-hidden rounded-[40px] shrink-0
-                ${!isCenter ? "cursor-pointer" : ""}
-              `}
-            >
-              <img
-                src={cat.image?.url}
-                alt={cat.name}
-                draggable={false}
-                className="w-full h-full object-cover"
-              />
+/* ---------------- Hero Carousel ---------------- */
 
-              <div
-                className={`absolute inset-0 ${isCenter ? "bg-gradient-to-t from-black/70 via-black/10 to-transparent" : "bg-black/25"}`}
-              />
+const HeroCarousel = () => {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const navigate = useNavigate();
+  const total = slides.length;
 
-              {isCenter && (
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={cat._id}
-                    initial={{ opacity: 0, y: 25 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4 }}
-                    className="absolute bottom-0 left-0 right-0 p-8"
-                  >
-                    <h2 className="text-white text-3xl md:text-5xl font-extrabold uppercase tracking-wider">
-                      {cat.name}
-                    </h2>
-                  </motion.div>
-                </AnimatePresence>
-              )}
-            </motion.div>
-          );
-        })}
+  const goTo = useCallback(
+    (idx) => {
+      setActiveIdx((idx + total) % total);
+    },
+    [total],
+  );
 
-        {/* ── Right Arrow ── */}
-        <button
-          onClick={() => go(1)}
-          aria-label="Next"
-          className="absolute right-4 md:right-8 z-20 flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/90 dark:bg-stone-800/90 text-stone-800 dark:text-white shadow-lg hover:scale-110 active:scale-95 transition-transform backdrop-blur-sm"
-        >
-          <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-        </button>
+  // Auto Scroll
+  useEffect(() => {
+    if (total <= 1) return;
+
+    const interval = setInterval(() => {
+      setActiveIdx((prev) => (prev + 1) % total);
+    }, AUTO_DELAY);
+
+    return () => clearInterval(interval);
+  }, [total]);
+
+  // Preload next slide
+  useEffect(() => {
+    const nextSlide = slides[(activeIdx + 1) % total];
+
+    nextSlide.forEach((banner) => {
+      const img = new Image();
+      img.src = banner.image;
+    });
+  }, [activeIdx, total]);
+
+  const currentSlide = slides[activeIdx];
+
+  return (
+    <div className="w-full py-6 select-none">
+      {/* Banner Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 h-[420px] md:h-[520px]">
+        {currentSlide.map((banner, i) => (
+          <div
+            key={i}
+            onClick={() => navigate(banner.path)}
+            className="relative overflow-hidden rounded-2xl cursor-pointer group h-full w-full"
+          >
+            {/* Image Animation */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${activeIdx}-${i}-${banner.image}`}
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+                className="absolute inset-0"
+              >
+                <LazyImage
+                  src={banner.image}
+                  alt={banner.title}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+            {/* Text Animation */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`text-${activeIdx}-${i}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
+                className="absolute bottom-6 left-6 right-6"
+              >
+                <h2 className="text-white text-3xl md:text-4xl font-extrabold uppercase tracking-wider leading-none">
+                  {banner.title}
+                </h2>
+
+                {banner.subtitle && (
+                  <p className="text-white/90 text-xs md:text-sm mt-2 uppercase tracking-wide">
+                    {banner.subtitle}
+                  </p>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        ))}
       </div>
 
-      {/* ── Dots ── */}
-      <div className="flex justify-center mt-8 gap-2">
-        {categoryData.map((item, index) => (
+      {/* Dots */}
+      <div className="flex justify-center mt-6 gap-2">
+        {slides.map((_, index) => (
           <motion.button
-            key={item._id}
+            key={index}
             type="button"
-            onClick={() => setActiveIdx(index)}
-            animate={{ width: index === activeIdx ? 28 : 8 }}
+            onClick={() => goTo(index)}
+            animate={{
+              width: index === activeIdx ? 28 : 8,
+            }}
             transition={{ duration: 0.3 }}
             className={`h-2 rounded-full ${
               index === activeIdx
@@ -207,4 +190,4 @@ const CategoryCarousel = () => {
   );
 };
 
-export default CategoryCarousel;
+export default HeroCarousel;

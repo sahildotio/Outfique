@@ -1,7 +1,6 @@
 import express from "express"
 import { authMiddleware } from "../middlewares/user.middleware.js"
 import {
-    orderCreateController,
     getAllOrderController,
     getDetailOrderController,
     deleteOrderController,
@@ -10,8 +9,6 @@ import {
 } from "../controllers/buyerOrder.controller.js"
 
 const router = express.Router()
-
-router.post("/", authMiddleware, orderCreateController)
 
 router.get("/", authMiddleware, getAllOrderController)
 

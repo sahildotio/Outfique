@@ -26,22 +26,14 @@ export const sendEmail = async (to, subject, text, html) => {
       },
     });
 
-    (async () => {
-      try {
-        await transporter.verify()
-        console.log("Email server is loaded")
-      } catch (error) {
-        console.log("Email server error: ", error.message)
-      }
-    })()
-    
-    await transporter.sendMail({
-      from: `"Outfique Support" <${configure.GOOGLE_USER}`,
-      to,
-      subject,
-      text,
-      html
-    })
+from: (`"Outfique Support" <${configure.GOOGLE_USER}>`,
+  await transporter.sendMail({
+    from: `"Outfique Support" <${configure.GOOGLE_USER}>`,
+    to,
+    subject,
+    text,
+    html,
+  }));
 
     console.log("Email sent successfully")
   } catch (error) {
