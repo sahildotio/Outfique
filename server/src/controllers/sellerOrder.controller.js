@@ -1,4 +1,6 @@
-import orders from "../models/order.model";
+import mongoose from "mongoose";
+import orders from "../models/order.model.js";
+import products from "../models/product.models.js";
 
 const getSellerOrderController = async (req, res) => {
   try {
@@ -85,11 +87,11 @@ const getSellerOrderController = async (req, res) => {
 const getSellerDetailOrderController = async (req, res) => {
   try {
     const sellerId = req.user._id;
-    const { orderId } = req.params;
+    const { orderid } = req.params;
 
     const order = await orders
       .findOne({
-        _id: orderId,
+        _id: orderid,
         "items.seller": sellerId,
       })
       .populate("buyer", "name email contact")
@@ -130,7 +132,7 @@ const getSellerDetailOrderController = async (req, res) => {
 const updateStatusOrderController = async (req, res) => {
   try {
     const sellerId = req.user._id;
-    const { orderId } = req.params;
+    const { orderid } = req.params;
     const { status } = req.body;
 
     const allowedStatus = [
@@ -151,7 +153,7 @@ const updateStatusOrderController = async (req, res) => {
     }
 
     const order = await orders.findOne({
-      _id: orderId,
+      _id: orderid,
       "items.seller": sellerId,
     });
 
@@ -211,7 +213,7 @@ const updateStatusOrderController = async (req, res) => {
 const trackingOrderController = async (req, res) => {
   try {
     const sellerId = req.user._id;
-    const { orderId } = req.params;
+    const { orderid } = req.params;
     const { trackingNumber } = req.body;
 
     if (!trackingNumber) {
@@ -222,7 +224,7 @@ const trackingOrderController = async (req, res) => {
     }
 
     const order = await orders.findOne({
-      _id: orderId,
+      _id: orderid,
       "items.seller": sellerId,
     });
 
@@ -246,6 +248,12 @@ const trackingOrderController = async (req, res) => {
 
     if (order.orderStatus === "PACKED") {
       order.orderStatus = "SHIPPED";
+
+      order.statusHistory.push({
+        status: "SHIPPED",
+        updatedBy: sellerId,
+        updatedAt: new Date(),
+      });
     }
 
     await order.save();
@@ -266,7 +274,7 @@ const trackingOrderController = async (req, res) => {
 const reviewOrderController = async (req, res) => {
   try {
     const sellerId = req.user._id;
-    const { orderId } = req.params;
+    const { orderid } = req.params;
     const { status } = req.body;
 
     if (!["APPROVED", "REJECTED"].includes(status)) {
@@ -277,7 +285,7 @@ const reviewOrderController = async (req, res) => {
     }
 
     const order = await orders.findOne({
-      _id: orderId,
+      _id: orderid,
       "items.seller": sellerId,
     });
 
@@ -314,7 +322,6 @@ const reviewOrderController = async (req, res) => {
           order.cancelReason = order.request.reason;
 
           if (order.paymentMethod === "RAZORPAY") {
-            
             order.paymentStatus = "REFUNDED";
           }
           break;
@@ -343,10 +350,310 @@ const reviewOrderController = async (req, res) => {
   }
 };
 
+const getSellerDashboardController = async (req, res) => {
+  try {
+    const sellerId = new mongoose.Types.ObjectId(req.user._id);
+
+    // ---------------- Products ----------------
+    const productStats = await products.aggregate([
+      {
+        $match: {
+          seller: sellerId,
+        },
+      },
+      {
+        $project: {
+          stock: {
+            $sum: "$variants.stock",
+          },
+          status: 1,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalProducts: {
+            $sum: 1,
+          },
+          activeProducts: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "ACTIVE"] }, 1, 0],
+            },
+          },
+          outOfStockProducts: {
+            $sum: {
+              $cond: [{ $eq: ["$stock", 0] }, 1, 0],
+            },
+          },
+          lowStockProducts: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [{ $gt: ["$stock", 0] }, { $lte: ["$stock", 10] }],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    // ---------------- Orders ----------------
+    const orderStats = await orders.aggregate([
+      {
+        $match: {
+          "items.seller": sellerId,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+
+          totalOrders: { $sum: 1 },
+
+          pendingOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "PENDING"] }, 1, 0],
+            },
+          },
+
+          processingOrders: {
+            $sum: {
+              $cond: [
+                {
+                  $in: ["$orderStatus", ["CONFIRMED", "PROCESSING", "PACKED"]],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+
+          shippedOrders: {
+            $sum: {
+              $cond: [
+                {
+                  $in: ["$orderStatus", ["SHIPPED", "OUT_FOR_DELIVERY"]],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+
+          deliveredOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "DELIVERED"] }, 1, 0],
+            },
+          },
+
+          cancelledOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "CANCELLED"] }, 1, 0],
+            },
+          },
+
+          returnRequests: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ["$request.type", "RETURN"],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+
+          exchangeRequests: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ["$request.type", "EXCHANGE"],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ["$paymentStatus", "PAID"],
+                },
+                "$totalAmount",
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    // ---------------- Today's Revenue ----------------
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayRevenue = await orders.aggregate([
+      {
+        $match: {
+          "items.seller": sellerId,
+          paymentStatus: "PAID",
+          createdAt: { $gte: today },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          revenue: {
+            $sum: "$totalAmount",
+          },
+        },
+      },
+    ]);
+
+    // ---------------- Monthly Revenue ----------------
+
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const monthlyRevenue = await orders.aggregate([
+      {
+        $match: {
+          "items.seller": sellerId,
+          paymentStatus: "PAID",
+          createdAt: {
+            $gte: monthStart,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          revenue: {
+            $sum: "$totalAmount",
+          },
+        },
+      },
+    ]);
+
+    // ---------------- Customers ----------------
+
+    const customerCount = await orders.distinct("buyer", {
+      "items.seller": sellerId,
+    });
+
+    // ---------------- Average Order Value ----------------
+
+    const totalRevenue = orderStats[0]?.totalRevenue || 0;
+    const totalOrders = orderStats[0]?.totalOrders || 0;
+
+    const averageOrderValue =
+      totalOrders === 0 ? 0 : totalRevenue / totalOrders;
+
+    // ---------------- Recent Orders ----------------
+
+    const recentOrders = await orders
+      .find({
+        "items.seller": sellerId,
+      })
+      .populate("buyer", "fullName")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // ---------------- Top Products ----------------
+
+    const topProducts = await orders.aggregate([
+      {
+        $match: {
+          "items.seller": sellerId,
+          paymentStatus: "PAID",
+        },
+      },
+      {
+        $unwind: "$items",
+      },
+      {
+        $match: {
+          "items.seller": sellerId,
+        },
+      },
+      {
+        $group: {
+          _id: "$items.product",
+          sold: {
+            $sum: "$items.quantity",
+          },
+        },
+      },
+      {
+        $sort: {
+          sold: -1,
+        },
+      },
+      {
+        $limit: 5,
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $unwind: "$product",
+      },
+      {
+        $project: {
+          _id: 1,
+          title: "$product.title",
+          images: "$product.images",
+          sold: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...productStats[0],
+
+        ...orderStats[0],
+
+        totalRevenue,
+
+        todayRevenue: todayRevenue[0]?.revenue || 0,
+
+        monthlyRevenue: monthlyRevenue[0]?.revenue || 0,
+
+        totalCustomers: customerCount.length,
+
+        averageOrderValue: Number(averageOrderValue.toFixed(2)),
+
+        recentOrders,
+
+        topProducts,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export {
-    getSellerDetailOrderController,
-    getSellerOrderController,
-    updateStatusOrderController,
-    reviewOrderController,
-    trackingOrderController,
-}
+  getSellerDashboardController,
+  getSellerDetailOrderController,
+  getSellerOrderController,
+  reviewOrderController,
+  trackingOrderController,
+  updateStatusOrderController,
+};

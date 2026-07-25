@@ -10,7 +10,7 @@ const orderSchema = new mongoose.Schema(
     },
     orderNumber: {
       type: String,
-      required: true,
+      default: () => `ORD${Date.now()}`,
       unique: true,
     },
     items: [orderItemSchema],

@@ -160,7 +160,7 @@ const requestOrderController = async (req, res) => {
       })
     }
 
-    if (type === "CANCEL") {
+    if (type === "CANCELLED") {
       if (!["PENDING", "CONFIRMED", "PROCESSING"].includes(order.orderStatus)) {
         return res.status(400).json({
           success: false,
@@ -170,11 +170,11 @@ const requestOrderController = async (req, res) => {
     }
 
     if(type === "RETURN"){
-      if (order.orderStatus !== "RETURN") {
+      if (order.orderStatus !== "DELIVERED") {
         return res.status(400).json({
           success: false,
-          message: "Only delivered orders can be returned"
-        })
+          message: "Only delivered orders can be returned",
+        });
       }
     }
 

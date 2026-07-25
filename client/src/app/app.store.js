@@ -6,6 +6,7 @@ import profileReducer from "../features/profile/state/profile.slice.js";
 import wishlistReducer from "../features/wishlist/state/wishlist.state.js"
 import themeReducer from "../features/theme/state/theme.slice.js"
 import addressReducer from "../features/address/state/address.slice.js"
+import orderFilterReducer from "../features/order/state/orderFilter.slice.js"
 
 export const store = configureStore({
     reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
         cart: cartReducers,
         profile: profileReducer,
         wishlist: wishlistReducer,
-        theme: themeReducer
+        theme: themeReducer,
+        orderFilter: orderFilterReducer
     }
 })

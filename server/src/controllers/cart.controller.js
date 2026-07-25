@@ -338,12 +338,21 @@ const createOrderController = async (req, res) => {
   }
   const dbOrder = await orders.create({
     buyer: req.user._id,
-
+    orderNumber: `ORD${Date.now()}`,
+    statusHistory: [
+      {
+        status: "PENDING",
+        updatedBy: req.user._id,
+        updatedAt: new Date(),
+      },
+    ],
     items: cart.items.map((item) => {
-      const variant = Array.isArray(item.productId.variants) ? item.productId.variants.find((v) => v._id.equals(item.variantId)) : item.productId.variants
-      
+      const variant = Array.isArray(item.productId.variants)
+        ? item.productId.variants.find((v) => v._id.equals(item.variantId))
+        : item.productId.variants;
+
       if (!variant) {
-        throw new Error("Variant not found")
+        throw new Error("Variant not found");
       }
 
       return {
@@ -373,7 +382,7 @@ const createOrderController = async (req, res) => {
     amount: cart.totalPrice,
     currency: cart.currency,
   });
-  console.log(razorpayOrder);
+
   const paymentDets = await payments.create({
     user: req.user._id,
     order: dbOrder._id,

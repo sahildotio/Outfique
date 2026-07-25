@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useProduct } from "../hooks/useProduct";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
+import SellerCategory from "../components/SellerCategory";
 
 const ease = [0.22, 1, 0.36, 1];
 
@@ -30,6 +31,11 @@ const cardVariant = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease } },
 };
 
+// a product's category can come back as a populated object or a bare id,
+// depending on the endpoint — normalize before comparing.
+const getCategoryId = (product) =>
+  product?.category?._id ?? product?.category ?? null;
+
 const Dashboard = () => {
   const { handleGetSellerProduct, handleDeleteProduct } = useProduct();
   const sellerProducts = useSelector((state) => state.product.sellerProducts);
@@ -37,6 +43,7 @@ const Dashboard = () => {
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   useEffect(() => {
     handleGetSellerProduct();
@@ -74,6 +81,17 @@ const Dashboard = () => {
     }
   };
 
+  const filteredProducts = useMemo(() => {
+    if (!sellerProducts) return [];
+    if (selectedCategory === "all") return sellerProducts;
+    return sellerProducts.filter(
+      (product) => getCategoryId(product) === selectedCategory,
+    );
+  }, [sellerProducts, selectedCategory]);
+
+  const hasAnyProducts = sellerProducts && sellerProducts.length > 0;
+  const hasFilteredProducts = filteredProducts.length > 0;
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0d0d] text-zinc-900 dark:text-white transition-colors px-6 py-10 md:px-16 md:py-14">
       {/* Header */}
@@ -81,7 +99,7 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease }}
-        className="mb-14"
+        className="mb-8"
       >
         <p className="text-xs tracking-[0.28em] uppercase text-zinc-500 dark:text-zinc-400 mb-2">
           Seller Dashboard
@@ -102,13 +120,21 @@ const Dashboard = () => {
           </button>
         </div>
         <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-3">
-          {sellerProducts?.length ?? 0} item
-          {sellerProducts?.length !== 1 ? "s" : ""} in your inventory
+          {hasAnyProducts
+            ? `${filteredProducts.length} item${
+                filteredProducts.length !== 1 ? "s" : ""
+              }${selectedCategory !== "all" ? " in this category" : " in your inventory"}`
+            : "0 items in your inventory"}
         </p>
       </motion.div>
 
-      {/* Empty State */}
-      {(!sellerProducts || sellerProducts.length === 0) && (
+      {/* Category filter */}
+      {hasAnyProducts && (
+        <SellerCategory onCategoryChange={setSelectedCategory} />
+      )}
+
+      {/* Empty state: no products at all */}
+      {!hasAnyProducts && (
         <div className="flex flex-col items-center justify-center py-32 gap-3 rounded-2xl border border-dashed border-zinc-200 dark:border-white/10">
           <i className="ri-store-2-line text-3xl text-zinc-300 dark:text-zinc-600" />
           <p className="text-zinc-700 dark:text-zinc-300 text-base">
@@ -120,16 +146,35 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Product Grid */}
-      {sellerProducts && sellerProducts.length > 0 && (
+      {/* Empty state: no products in the selected category */}
+      {hasAnyProducts && !hasFilteredProducts && (
         <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, ease }}
+          className="flex flex-col items-center justify-center py-32 gap-3 rounded-2xl border border-dashed border-zinc-200 dark:border-white/10"
+        >
+          <i className="ri-filter-3-line text-3xl text-zinc-300 dark:text-zinc-600" />
+          <p className="text-zinc-700 dark:text-zinc-300 text-base">
+            No products in this category
+          </p>
+          <p className="text-zinc-400 dark:text-zinc-500 text-xs tracking-widest uppercase">
+            Try another category
+          </p>
+        </motion.div>
+      )}
+
+      {/* Product Grid */}
+      {hasFilteredProducts && (
+        <motion.div
+          key={selectedCategory}
           variants={gridContainer}
           initial="hidden"
           animate="show"
           className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5"
         >
           <AnimatePresence>
-            {sellerProducts.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard
                 key={product._id}
                 product={product}

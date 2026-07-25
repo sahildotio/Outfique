@@ -11,6 +11,10 @@ const variantSchema = new Schema(
         },
       },
     ],
+    
+    title: {
+      type: String
+    },
 
     stock: {
       type: Number,

@@ -6,14 +6,16 @@ import {
   updateStatusOrderController,
   trackingOrderController,
   reviewOrderController,
+  getSellerDashboardController,
 } from "../controllers/sellerOrder.controller.js";
 
 const router = express.Router()
 
+router.get("/dashboard", sellerMiddleware, getSellerDashboardController);
+
 router.get("/", sellerMiddleware, getSellerOrderController)
 
 router.get("/:orderid", sellerMiddleware, getSellerDetailOrderController)
-
 
 router.patch("/:orderid/status", sellerMiddleware, updateStatusOrderController)
 

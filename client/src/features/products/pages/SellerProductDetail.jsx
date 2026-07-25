@@ -21,14 +21,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 const ease = [0.22, 1, 0.36, 1];
 
 const ATTRIBUTE_KEYS = [
-  "color",
   "size",
+  "color",
+  "pattern",
+  "fit",
   "material",
-  "style",
-  "weight",
-  "length",
-  "width",
-  "height",
+  "collar",
+  "sleeves",
 ];
 
 // size is the one attribute whose value is an array ("size": ["M","XS","L"])
@@ -52,6 +51,103 @@ const JEANS_SIZES = [
 ];
 
 const SHOE_SIZES = ["5", "6", "7", "8", "9", "10", "11", "12"];
+
+// Options for attributes that use a single-select button grid, like size.
+// Unlike size, these store a plain string value (not an array), so picking
+// a new option replaces the value rather than toggling into a list.
+const ATTRIBUTE_OPTIONS = {
+  color: [
+    "Black",
+    "White",
+    "Grey",
+    "Navy",
+    "Blue",
+    "Light Blue",
+    "Brown",
+    "Beige",
+    "Olive",
+    "Green",
+    "Khaki",
+    "Maroon",
+    "Red",
+    "Pink",
+    "Purple",
+    "Yellow",
+    "Orange",
+    "Cream",
+    "Off White",
+    "Multi Color",
+  ],
+  pattern: [
+    "Solid",
+    "Striped",
+    "Checked",
+    "Plain",
+    "Printed",
+    "Graphic Print",
+    "Floral",
+    "Camouflage",
+    "Textured",
+    "Abstract",
+    "Color Block",
+    "Self Design",
+    "Distressed",
+  ],
+  fit: [
+    "Slim Fit",
+    "Regular Fit",
+    "Relaxed Fit",
+    "Oversized",
+    "Loose Fit",
+    "Skinny Fit",
+    "Straight Fit",
+    "Tapered Fit",
+    "Athletic Fit",
+  ],
+  material: [
+    "100% Cotton",
+    "Organic Cotton",
+    "Linen",
+    "Denim",
+    "Polyester",
+    "Cotton Blend",
+    "Lycra",
+    "Spandex",
+    "Rayon",
+    "Viscose",
+    "Wool",
+    "Silk",
+    "Corduroy",
+    "Leather",
+    "PU Leather",
+    "Suede",
+    "Canvas",
+    "Nylon",
+    "Fleece",
+    "Knit",
+  ],
+  collar: [
+    "Round Neck",
+    "V Neck",
+    "Polo",
+    "Mandarin",
+    "Spread Collar",
+    "Button Down",
+    "Band Collar",
+    "Cuban Collar",
+    "Hooded",
+    "Turtleneck",
+    "Henley",
+  ],
+  sleeves: [
+    "Sleeveless",
+    "Half Sleeve",
+    "3/4 Sleeve",
+    "Full Sleeve",
+    "Roll Up Sleeve",
+    "Raglan Sleeve",
+  ],
+};
 
 const inputClass =
   "rounded-xl border-stone-200 dark:border-stone-800 bg-transparent focus-visible:ring-1 focus-visible:ring-stone-900 dark:focus-visible:ring-white";
@@ -93,6 +189,7 @@ const SellerProductDetail = () => {
   const [sizeType, setSizeType] = useState("clothing");
 
   const [newVariant, setNewVariant] = useState({
+    title: "",
     stock: "",
     price: { amount: "" },
     attributes: [{ key: "", value: "" }],
@@ -217,37 +314,14 @@ const SellerProductDetail = () => {
     }
   };
 
-  // Size options depend on the Clothing/Shoes toggle, not the product category.
-const JEANS_CATEGORIES = [
-  "jeans",
-  "pants",
-  "trouser",
-  "trousers",
-  "chino",
-  "chinos",
-  "jogger",
-  "joggers",
-];
+  // Size options depend on the Clothing/Jeans/Shoes toggle, not the product category.
+  const SIZE_OPTIONS =
+    sizeType === "clothes"
+      ? CLOTHING_SIZES
+      : sizeType === "jeans"
+        ? JEANS_SIZES
+        : SHOE_SIZES;
 
-const SHOE_CATEGORIES = [
-  "shoe",
-  "shoes",
-  "sneaker",
-  "sneakers",
-  "boot",
-  "boots",
-  "loafer",
-  "loafers",
-  "slipper",
-  "sandals",
-];
-
-const SIZE_OPTIONS =
-  sizeType === "clothes"
-    ? CLOTHING_SIZES
-    : sizeType === "jeans"
-      ? JEANS_SIZES
-      : SHOE_SIZES;
   const submitVariantHandler = async () => {
     const attrs = {};
     newVariant.attributes.forEach((a) => {
@@ -265,6 +339,7 @@ const SIZE_OPTIONS =
       if (createdVariant) {
         setVariants((prev) => [...prev, createdVariant]);
         setNewVariant({
+          title: "",
           stock: "",
           price: { amount: "" },
           attributes: [{ key: "", value: "" }],
@@ -328,7 +403,7 @@ const SIZE_OPTIONS =
                         e.currentTarget.src =
                           "https://placehold.co/600x800?text=No+Image";
                       }}
-                      className="w-full h-[240px] object-cover hover:scale-105 transition-transform duration-500"
+                      className="w-full h-[160px] sm:h-[200px] lg:h-[240px] object-cover hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 ))}
@@ -367,6 +442,24 @@ const SIZE_OPTIONS =
                   <h2 className="text-xl sm:text-2xl font-semibold mb-6">
                     Add Product Variant
                   </h2>
+
+                  <div className="flex flex-col gap-2 mb-6">
+                    <Label className="text-xs font-medium tracking-[0.1em] uppercase text-stone-500 dark:text-stone-400">
+                      Variant Title
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="Enter variant title"
+                      value={newVariant.title}
+                      onChange={(e) =>
+                        setNewVariant((prev) => ({
+                          ...prev,
+                          title: e.target.value,
+                        }))
+                      }
+                      className={inputClass}
+                    />
+                  </div>
 
                   <div className="grid sm:grid-cols-2 gap-4 mb-6">
                     <div className="flex flex-col gap-2">
@@ -415,30 +508,45 @@ const SIZE_OPTIONS =
                     </Label>
                     <div className="mt-3 space-y-3">
                       {newVariant.attributes.map((attr, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <Select
-                            value={attr.key}
-                            onValueChange={(value) =>
-                              handleAttributeKeyChange(idx, value)
-                            }
-                          >
-                            <SelectTrigger
-                              className={`w-40 shrink-0 ${inputClass}`}
+                        <div
+                          key={idx}
+                          className="flex flex-col sm:flex-row sm:items-start gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={attr.key}
+                              onValueChange={(value) =>
+                                handleAttributeKeyChange(idx, value)
+                              }
                             >
-                              <SelectValue placeholder="Attribute" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ATTRIBUTE_KEYS.map((key) => (
-                                <SelectItem key={key} value={key}>
-                                  {key}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                              <SelectTrigger
+                                className={`flex-1 sm:w-40 sm:shrink-0 ${inputClass}`}
+                              >
+                                <SelectValue placeholder="Attribute" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ATTRIBUTE_KEYS.map((key) => (
+                                  <SelectItem key={key} value={key}>
+                                    {key}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+
+                            {/* remove button shown here only on mobile, next to the select */}
+                            <button
+                              type="button"
+                              onClick={() => removeAttributes(idx)}
+                              aria-label="Remove attribute"
+                              className="sm:hidden shrink-0 w-9 h-9 rounded-xl border border-stone-200 dark:border-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-800 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
 
                           {attr.key === "size" ? (
                             <div className="flex-1 flex flex-col gap-3">
-                              <div className="flex rounded-full border border-stone-200 dark:border-stone-800 p-1 w-fit">
+                              <div className="flex flex-wrap rounded-full border border-stone-200 dark:border-stone-800 p-1 w-fit gap-1">
                                 <button
                                   type="button"
                                   onClick={() => setSizeType("clothes")}
@@ -489,8 +597,8 @@ const SIZE_OPTIONS =
                                       onClick={() => toggleSizeValue(idx, size)}
                                       className={`px-3 h-9 rounded-lg border text-xs ${
                                         selected
-                                          ? "bg-stone-900 text-white"
-                                          : "border-stone-300"
+                                          ? "bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900"
+                                          : "border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-stone-500"
                                       }`}
                                     >
                                       {size}
@@ -498,6 +606,32 @@ const SIZE_OPTIONS =
                                   );
                                 })}
                               </div>
+                            </div>
+                          ) : ATTRIBUTE_OPTIONS[attr.key] ? (
+                            <div className="flex-1 flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
+                              {ATTRIBUTE_OPTIONS[attr.key].map((option) => {
+                                const selected = attr.value === option;
+                                return (
+                                  <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() =>
+                                      handleAttributesChange(
+                                        idx,
+                                        "value",
+                                        selected ? "" : option,
+                                      )
+                                    }
+                                    className={`px-3 h-9 rounded-lg border text-xs whitespace-nowrap ${
+                                      selected
+                                        ? "bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900"
+                                        : "border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-stone-500"
+                                    }`}
+                                  >
+                                    {option}
+                                  </button>
+                                );
+                              })}
                             </div>
                           ) : (
                             <Input
@@ -514,11 +648,12 @@ const SIZE_OPTIONS =
                             />
                           )}
 
+                          {/* remove button shown here on sm+ only, at the end of the row */}
                           <button
                             type="button"
                             onClick={() => removeAttributes(idx)}
                             aria-label="Remove attribute"
-                            className="shrink-0 w-9 h-9 rounded-xl border border-stone-200 dark:border-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-800 transition-colors"
+                            className="hidden sm:flex shrink-0 w-9 h-9 rounded-xl border border-stone-200 dark:border-stone-800 items-center justify-center text-stone-500 dark:text-stone-400 hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-800 transition-colors"
                           >
                             <X className="w-4 h-4" />
                           </button>

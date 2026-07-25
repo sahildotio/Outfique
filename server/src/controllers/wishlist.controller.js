@@ -84,18 +84,22 @@ const deleteWishlistController = async (req, res) => {
 
   const wishlist = await wishLists.findOne({
     user: req.user._id,
-    "items.productId": productId,
-    "items.variantId": variantId,
+    items: {
+      $elemMatch: {
+        productId,
+        variantId,
+      },
+    },
   });
 
   if (!wishlist) {
-    return res.status(400).json({
+    return res.status(404).json({
       success: false,
-      message: "Items not found in wishlist",
+      message: "Item not found in wishlist",
     });
   }
 
-  await wishLists.findOneAndReplace(
+  await wishLists.findOneAndUpdate(
     { user: req.user._id },
     {
       $pull: {
@@ -109,7 +113,7 @@ const deleteWishlistController = async (req, res) => {
 
   return res.status(200).json({
     success: true,
-    message: "Items removed from wishlist successfully",
+    message: "Item removed from wishlist successfully",
   });
 };
 

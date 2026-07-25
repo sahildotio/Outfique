@@ -212,31 +212,37 @@ const getMeController = async (req, res) => {
  */
 
 const logoutController = async (req, res) => {
-  try {
     const accessToken = req.cookies.accessToken;
     const refreshToken = req.cookies.refreshToken;
 
     if (accessToken) {
-      await redis.set(accessToken, "blacklisted", "EX", 15 * 60);
+      await redis.set(accessToken, "blacklisted", {
+        ex: 15 * 60,
+      });
     }
 
     if (refreshToken) {
-      await redis.set(refreshToken, "blacklisted", "EX", 15 * 24 * 60 * 60);
+      await redis.set(refreshToken, "blacklisted", {
+        ex: 15 * 24 * 60 * 60,
+      });
     }
+res.clearCookie("accessToken", {
+  httpOnly: true,
+  secure: configure.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/",
+});
 
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+res.clearCookie("refreshToken", {
+  httpOnly: true,
+  secure: configure.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/",
+});
     return res.json({
       success: true,
       message: "Logged out successfully",
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
 };
 
 /**

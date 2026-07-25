@@ -205,6 +205,7 @@ const addProductVariantController = async (req, res) => {
   }
 
   const stock = req.body.stock;
+  const title = req.body.title
   const attributes = JSON.parse(req.body.attributes || "{}");
   const price = req.body.amount;
   const color = req.body.color;
@@ -212,6 +213,7 @@ const addProductVariantController = async (req, res) => {
   product.variants.push({
     productImages: images,
     stock,
+    title,
     attributes,
     price: {
       amount: price,
@@ -228,6 +230,7 @@ const addProductVariantController = async (req, res) => {
     message: "Variant created successfully",
     product: {
       stock,
+      title,  
       attributes,
       price,
       productImages: images,
@@ -374,6 +377,8 @@ const deleteVariantController = async (req, res) => {
     });
   }
 };
+
+
 
 export {
   addProductVariantController,

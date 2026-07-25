@@ -71,7 +71,6 @@ const Wishlist = () => {
         item.variantId,
       );
 
-
       if (res?.success) {
         setWishlistData((prev) => prev.filter((i) => i._id !== item._id));
       }
@@ -96,14 +95,17 @@ const Wishlist = () => {
         item.productId._id,
         item.variantId,
       );
-      console.log(res)
 
-      if (res.success) {
+      if (res?.success) {
         setWishlistData((prev) => prev.filter((i) => i._id !== item._id));
+      } else {
+        // backend didn't confirm removal — resync with the server instead
+        // of leaving stale state that only a manual reload would fix
+        await fetchWishListData();
       }
-      
     } catch (error) {
-      console.log(error.message);
+      console.error("Failed to remove wishlist item:", error.message);
+      await fetchWishListData();
     } finally {
       setRemovingIds((prev) => ({ ...prev, [item._id]: false }));
     }
@@ -119,8 +121,6 @@ const Wishlist = () => {
     selectedProduct?.productImages?.[0]?.url;
   const availableSizes = selectedVariant?.attributes?.size || [];
 
-  console.log("Wishlist", wishlistData)
-  
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
       <h1 className="mb-5 text-lg font-medium text-zinc-900 dark:text-white sm:mb-6 sm:text-xl">
@@ -322,8 +322,9 @@ const WishlistItemCard = ({
           <button
             type="button"
             onClick={() => onRemove(item)}
+            disabled={removing}
             aria-label="Remove from wishlist"
-            className="shrink-0 rounded-full p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e63b1f]/50 cursor-pointer dark:text-zinc-500 dark:hover:bg-white/5 dark:hover:text-zinc-200"
+            className="shrink-0 rounded-full p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e63b1f]/50 cursor-pointer dark:text-zinc-500 dark:hover:bg-white/5 dark:hover:text-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <i className="ri-delete-bin-line text-[18px]" />
           </button>

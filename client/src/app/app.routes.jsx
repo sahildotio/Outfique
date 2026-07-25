@@ -20,6 +20,8 @@ import AppLayout from "./AppLayout";
 import NotFound from "./NotFound";
 import ResetPassword from "@/features/auth/pages/ResetPassword";
 import Address from "@/features/address/page/Address";
+import Customer from "@/features/order/page/Customer";
+import SellerOrder from "@/features/order/page/SellerOrder";
 
 export const router = createBrowserRouter([
   {
@@ -59,6 +61,25 @@ export const router = createBrowserRouter([
                 <Dashboard />
               </Protected>
             ),
+          },
+          {
+            path: "/seller/customers",
+            element: (
+              <Protected role="seller">
+                <Customer />
+              </Protected>
+            )
+          },
+          {
+            path: "/seller/orders",
+            element: (
+              <Protected role="seller">
+                <SellerOrder />
+              </Protected>
+            )
+          },
+          {
+            path: "/seller/"
           },
           {
             path: "/seller/product/:productId",

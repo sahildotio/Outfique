@@ -14,9 +14,7 @@ import SearchAutocomplete from "./Searchautocomplete ";
 // seller sub-nav — adjust paths to match your actual routes
 const SELLER_MORE_LINKS = [
   { icon: "ri-archive-2-line", label: "Inventory", path: "/seller/inventory" },
-  { icon: "ri-line-chart-line", label: "Sales", path: "/seller/sales" },
   { icon: "ri-file-list-3-line", label: "Orders", path: "/seller/orders" },
-  { icon: "ri-bar-chart-2-line", label: "Analytics", path: "/seller/analytics" },
   { icon: "ri-group-line", label: "Customers", path: "/seller/customers" },
   { icon: "ri-star-line", label: "Reviews", path: "/seller/reviews" },
   { icon: "ri-bank-card-line", label: "Payments / Payouts", path: "/seller/payments" },

@@ -35,6 +35,7 @@ router.post("/", sellerMiddleware, upload.array("productImages", 7),createProduc
  */
 router.get("/seller", sellerMiddleware, getAllSellerProductsController)
 
+
 /**
  * @GET method
  * @desc = get all the items

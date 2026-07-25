@@ -15,12 +15,11 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router";
 import Product from "../components/Product";
 import { useProduct } from "../hooks/useProduct";
 
-const LIVE_FILTER_FIELDS = new Set(["size", "color"]);
 const FILTER_KEYS = [
   "size",
   "color",
@@ -31,33 +30,150 @@ const FILTER_KEYS = [
   "sleeves",
 ];
 
+// size uses its own picker (Clothes/Jeans/Shoes toggle + button grid) rather
+// than the generic checkbox list, since the option set depends on the type.
+const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
+const JEANS_SIZES = [
+  "28",
+  "30",
+  "32",
+  "34",
+  "36",
+  "38",
+  "40",
+  "42",
+  "44",
+  "46",
+  "48",
+  "50",
+];
+const SHOE_SIZES = ["5", "6", "7", "8", "9", "10", "11", "12"];
+
+const SIZE_TYPE_OPTIONS = {
+  clothes: CLOTHING_SIZES,
+  jeans: JEANS_SIZES,
+  shoes: SHOE_SIZES,
+};
+
 const FILTER_GROUPS = [
-  { id: "size", label: "Size", options: ["XS", "S", "M", "L", "XL", "XXL"] },
   {
     id: "color",
     label: "Color",
-    options: ["Black", "White", "Brown", "Navy", "Beige", "Red"],
+    options: [
+      "Black",
+      "White",
+      "Grey",
+      "Navy",
+      "Blue",
+      "Light Blue",
+      "Brown",
+      "Beige",
+      "Olive",
+      "Green",
+      "Khaki",
+      "Maroon",
+      "Red",
+      "Pink",
+      "Purple",
+      "Yellow",
+      "Orange",
+      "Cream",
+      "Off White",
+      "Multi Color",
+    ],
   },
+
   {
     id: "pattern",
     label: "Pattern",
-    options: ["Solid", "Striped", "Printed", "Textured"],
+    options: [
+      "Solid",
+      "Striped",
+      "Checked",
+      "Plaid",
+      "Printed",
+      "Graphic Print",
+      "Floral",
+      "Camouflage",
+      "Textured",
+      "Abstract",
+      "Color Block",
+      "Self Design",
+    ],
   },
-  { id: "fit", label: "Fit", options: ["Slim", "Regular", "Oversized"] },
+
+  {
+    id: "fit",
+    label: "Fit",
+    options: [
+      "Slim Fit",
+      "Regular Fit",
+      "Relaxed Fit",
+      "Oversized",
+      "Loose Fit",
+      "Skinny Fit",
+      "Straight Fit",
+      "Tapered Fit",
+      "Athletic Fit",
+    ],
+  },
+
   {
     id: "material",
     label: "Material",
-    options: ["Cotton", "Linen", "Polyester", "Knit"],
+    options: [
+      "100% Cotton",
+      "Organic Cotton",
+      "Linen",
+      "Denim",
+      "Polyester",
+      "Cotton Blend",
+      "Lycra",
+      "Spandex",
+      "Rayon",
+      "Viscose",
+      "Wool",
+      "Silk",
+      "Corduroy",
+      "Leather",
+      "PU Leather",
+      "Suede",
+      "Canvas",
+      "Nylon",
+      "Fleece",
+      "Knit",
+    ],
   },
+
   {
     id: "collar",
     label: "Collar",
-    options: ["Round Neck", "Polo", "Mandarin"],
+    options: [
+      "Round Neck",
+      "V Neck",
+      "Polo",
+      "Mandarin",
+      "Spread Collar",
+      "Button Down",
+      "Band Collar",
+      "Cuban Collar",
+      "Hooded",
+      "Turtleneck",
+      "Henley",
+    ],
   },
+
   {
     id: "sleeves",
     label: "Sleeves",
-    options: ["Half Sleeve", "Full Sleeve", "Sleeveless"],
+    options: [
+      "Sleeveless",
+      "Half Sleeve",
+      "3/4 Sleeve",
+      "Full Sleeve",
+      "Roll Up Sleeve",
+      "Raglan Sleeve",
+    ],
   },
 ];
 
@@ -78,32 +194,82 @@ const FilterSidebar = ({
   clearAll,
   appliedCount,
   onApply,
-}) => (
-  <div className="flex flex-col h-full">
-    <div className="flex items-center justify-between px-1 pb-4">
-      <h2 className="text-sm font-bold tracking-[0.15em] uppercase text-zinc-900 dark:text-zinc-100">
-        Filters
-      </h2>
-    </div>
+}) => {
+  const [sizeType, setSizeType] = useState("clothes");
 
-    <Accordion type="multiple" className="flex-1 overflow-y-auto">
-      {FILTER_GROUPS.map((group) => {
-        const isLive = LIVE_FILTER_FIELDS.has(group.id);
-        return (
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-1 pb-4">
+        <h2 className="text-sm font-bold tracking-[0.15em] uppercase text-zinc-900 dark:text-zinc-100">
+          Filters
+        </h2>
+      </div>
+
+      <Accordion type="multiple" className="flex-1 overflow-y-auto">
+        {/* Size — its own picker since the option set depends on the type toggle */}
+        <AccordionItem
+          value="size"
+          className="border-zinc-200 dark:border-zinc-800"
+        >
+          <AccordionTrigger className="text-xs font-bold tracking-[0.12em] uppercase text-zinc-900 dark:text-zinc-100 hover:no-underline py-4">
+            Size
+          </AccordionTrigger>
+          <AccordionContent className="pb-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap rounded-full border border-zinc-200 dark:border-zinc-800 p-1 w-fit gap-1">
+                {Object.keys(SIZE_TYPE_OPTIONS).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setSizeType(type)}
+                    className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wide transition-colors ${
+                      sizeType === type
+                        ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
+                        : "text-zinc-500 dark:text-zinc-400"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative -mx-1">
+                {/* edge fade for scroll affordance */}
+                <div className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-white dark:from-[#0d0d0d] to-transparent z-10" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-white dark:from-[#0d0d0d] to-transparent z-10" />
+
+                <div className="flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+                  {SIZE_TYPE_OPTIONS[sizeType].map((size) => {
+                    const checked = selected.size.includes(size);
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => toggleOption("size", size)}
+                        className={`shrink-0 px-3 h-9 rounded-lg border text-xs transition-colors ${
+                          checked
+                            ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white"
+                            : "border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-500"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {FILTER_GROUPS.map((group) => (
           <AccordionItem
             key={group.id}
             value={group.id}
             className="border-zinc-200 dark:border-zinc-800"
           >
             <AccordionTrigger className="text-xs font-bold tracking-[0.12em] uppercase text-zinc-900 dark:text-zinc-100 hover:no-underline py-4">
-              <span className="flex items-center gap-2">
-                {group.label}
-                {!isLive && (
-                  <span className="text-[9px] normal-case tracking-normal font-medium px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
-                    Soon
-                  </span>
-                )}
-              </span>
+              {group.label}
             </AccordionTrigger>
             <AccordionContent className="pb-4">
               <div className="flex flex-col gap-3">
@@ -113,15 +279,10 @@ const FilterSidebar = ({
                   return (
                     <label
                       key={key}
-                      className={`flex items-center gap-2.5 group ${
-                        isLive
-                          ? "cursor-pointer"
-                          : "cursor-not-allowed opacity-50"
-                      }`}
+                      className="flex items-center gap-2.5 group cursor-pointer"
                     >
                       <Checkbox
                         checked={checked}
-                        disabled={!isLive}
                         onCheckedChange={() => toggleOption(group.id, option)}
                         className="rounded-[4px] border-zinc-400 dark:border-zinc-600 data-[state=checked]:bg-[#e63b1f] data-[state=checked]:border-[#e63b1f]"
                       />
@@ -134,53 +295,53 @@ const FilterSidebar = ({
               </div>
             </AccordionContent>
           </AccordionItem>
-        );
-      })}
-    </Accordion>
+        ))}
+      </Accordion>
 
-    {/* Price range */}
-    <div className="py-4 border-t border-zinc-200 dark:border-zinc-800">
-      <h3 className="text-xs font-bold tracking-[0.12em] uppercase text-zinc-900 dark:text-zinc-100 mb-3">
-        Price
-      </h3>
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min="0"
-          placeholder="Min"
-          value={minPrice}
-          onChange={(e) => setMinPrice(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-[#141414] text-zinc-900 dark:text-zinc-100 text-sm px-3 py-2 outline-none focus:border-[#e63b1f]"
-        />
-        <span className="text-zinc-400 text-sm">–</span>
-        <input
-          type="number"
-          min="0"
-          placeholder="Max"
-          value={maxPrice}
-          onChange={(e) => setMaxPrice(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-[#141414] text-zinc-900 dark:text-zinc-100 text-sm px-3 py-2 outline-none focus:border-[#e63b1f]"
-        />
+      {/* Price range */}
+      <div className="py-4 border-t border-zinc-200 dark:border-zinc-800">
+        <h3 className="text-xs font-bold tracking-[0.12em] uppercase text-zinc-900 dark:text-zinc-100 mb-3">
+          Price
+        </h3>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min="0"
+            placeholder="Min"
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-[#141414] text-zinc-900 dark:text-zinc-100 text-sm px-3 py-2 outline-none focus:border-[#e63b1f]"
+          />
+          <span className="text-zinc-400 text-sm">–</span>
+          <input
+            type="number"
+            min="0"
+            placeholder="Max"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-[#141414] text-zinc-900 dark:text-zinc-100 text-sm px-3 py-2 outline-none focus:border-[#e63b1f]"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-auto">
+        <Button
+          variant="outline"
+          onClick={clearAll}
+          className="rounded-full border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          Clear
+        </Button>
+        <Button
+          onClick={onApply}
+          className="rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
+        >
+          Apply {appliedCount > 0 ? `(${appliedCount})` : ""}
+        </Button>
       </div>
     </div>
-
-    <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-auto">
-      <Button
-        variant="outline"
-        onClick={clearAll}
-        className="rounded-full border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-      >
-        Clear
-      </Button>
-      <Button
-        onClick={onApply}
-        className="rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
-      >
-        Apply {appliedCount > 0 ? `(${appliedCount})` : ""}
-      </Button>
-    </div>
-  </div>
-);
+  );
+};
 
 const ProductGridSkeleton = () => (
   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
