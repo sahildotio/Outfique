@@ -3,50 +3,51 @@ import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router";
 import { useProfile } from "../hooks/useProfile.js";
 
+const labelClass =
+  "text-xs font-medium tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400";
+
+const inputClass =
+  "w-full h-11 px-4 rounded-xl bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-sm focus:outline-none focus:border-[#e63b1f]/50 focus:ring-1 focus:ring-[#e63b1f]/30 transition-colors duration-200";
+
 /* ─── tiny reusable input ─────────────────────────────────────────── */
 const InputField = ({ label, name, value, onChange, placeholder = "" }) => (
   <div className="flex flex-col gap-2">
-    <label
-      className="text-[8.5px] tracking-[0.28em] uppercase text-[#555]"
-      style={{ fontFamily: "'Barlow', sans-serif" }}
-    >
+    <label htmlFor={name} className={labelClass}>
       {label}
     </label>
     <input
+      id={name}
       type="text"
       name={name}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="
-        w-full bg-transparent border-0 border-b border-[#222]
-        py-2 px-0
-        font-['Bebas_Neue'] text-[16px] tracking-[0.12em] text-[#e63b1f]
-        placeholder:text-[#2a2a2a]
-        outline-none
-        focus:border-b-[#e63b1f]
-        transition-colors duration-200
-      "
+      className={inputClass}
     />
   </div>
 );
 
+/* ─── section heading with accent bar ─────────────────────────────── */
+const SectionHeading = ({ children }) => (
+  <h2 className="flex items-center gap-2.5 text-xs font-bold tracking-[0.2em] uppercase text-zinc-900 dark:text-white mb-6">
+    <span className="w-1 h-4 bg-[#e63b1f] shrink-0" />
+    {children}
+  </h2>
+);
+
 /* ─── address-type toggle button ──────────────────────────────────── */
-const TypeBtn = ({ label, value, current, onClick }) => (
+const TypeBtn = ({ label, value, icon, current, onClick }) => (
   <button
     type="button"
     onClick={() => onClick(value)}
-    className={`
-      flex-1 py-3
-      font-['Bebas_Neue'] text-[13px] tracking-[0.22em]
-      border transition-all duration-200 cursor-pointer
-      ${
-        current === value
-          ? "bg-white text-black border-white"
-          : "bg-transparent text-[#555] border-[#222] hover:border-[#444] hover:text-[#888]"
-      }
-    `}
+    aria-pressed={current === value}
+    className={`flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl border text-sm font-medium transition-colors duration-200 ${
+      current === value
+        ? "bg-[#e63b1f] text-white border-[#e63b1f]"
+        : "border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-white/30"
+    }`}
   >
+    <i className={`${icon} text-sm`} />
     {label}
   </button>
 );
@@ -67,6 +68,7 @@ const CreateProfile = () => {
     country: "India",
     addressType: "home",
   });
+  const [submitting, setSubmitting] = useState(false);
 
   /* ── unchanged logic ── */
   const handleChange = (e) => {
@@ -78,6 +80,7 @@ const CreateProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const data = await handelCreateUserProfile(userid, {
         fullName: formData.fullName,
@@ -100,45 +103,30 @@ const CreateProfile = () => {
     } catch (error) {
       toast.error("Something went wrong");
       console.log(error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   /* ── render ── */
   return (
-    <div
-      className="min-h-screen bg-[#0a0a0a] text-white"
-      style={{ fontFamily: "'Barlow', sans-serif" }}
-    >
-      {/* ── Page content ── */}
-      <div className="px-5 md:px-10 lg:px-20 pt-9 pb-20">
+    <div className="min-h-screen bg-white dark:bg-[#0d0d0d] text-zinc-900 dark:text-white transition-colors">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         {/* Page header */}
-        <div className="mb-8">
-          <p className="text-[9px] tracking-[3px] uppercase text-[#555] mb-2">
+        <div className="mb-10">
+          <span className="text-xs font-medium tracking-[0.15em] uppercase text-zinc-500 dark:text-zinc-400">
             Personal Information
-          </p>
-          <h1
-            className="text-[40px] sm:text-[52px] leading-none text-white mb-5"
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              letterSpacing: "2px",
-            }}
-          >
-            CREATE
-            <br />
-            PROFILE
+          </span>
+          <h1 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">
+            Create Profile
           </h1>
-          <div className="h-px bg-[#1e1e1e]" />
+          <div className="mt-6 h-px bg-zinc-200 dark:bg-white/10" />
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* ── Personal Details ── */}
+          {/* Personal Details */}
           <section className="mb-10">
-            <p
-              className="text-[18px] tracking-[3px] text-white mb-6"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              PERSONAL DETAILS
-            </p>
+            <SectionHeading>Personal Details</SectionHeading>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <InputField
@@ -146,7 +134,7 @@ const CreateProfile = () => {
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleChange}
-                placeholder="ALEXANDER VANE"
+                placeholder="Alexander Vane"
               />
               <InputField
                 label="Contact Number"
@@ -165,17 +153,11 @@ const CreateProfile = () => {
             </div>
           </section>
 
-          {/* divider */}
-          <div className="h-px bg-[#1e1e1e] mb-10" />
+          <div className="h-px bg-zinc-200 dark:bg-white/10 mb-10" />
 
-          {/* ── Address Details ── */}
+          {/* Address Details */}
           <section className="mb-10">
-            <p
-              className="text-[18px] tracking-[3px] text-white mb-6"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              ADDRESS DETAILS
-            </p>
+            <SectionHeading>Address Details</SectionHeading>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <InputField
@@ -190,28 +172,28 @@ const CreateProfile = () => {
                 name="street"
                 value={formData.street}
                 onChange={handleChange}
-                placeholder="BRUTALIST BOULEVARD"
+                placeholder="Brutalist Boulevard"
               />
               <InputField
                 label="Landmark"
                 name="landmark"
                 value={formData.landmark}
                 onChange={handleChange}
-                placeholder="OPPOSITE THE MONOLITH"
+                placeholder="Opposite the monolith"
               />
               <InputField
                 label="City"
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
-                placeholder="NEW DELHI"
+                placeholder="New Delhi"
               />
               <InputField
                 label="State"
                 name="state"
                 value={formData.state}
                 onChange={handleChange}
-                placeholder="DELHI"
+                placeholder="Delhi"
               />
               <InputField
                 label="Pincode"
@@ -225,37 +207,35 @@ const CreateProfile = () => {
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
-                placeholder="INDIA"
+                placeholder="India"
               />
 
-              {/* Address Type — toggle buttons replacing select */}
-              <div className="flex flex-col gap-3">
-                <span
-                  className="text-[8.5px] tracking-[0.28em] uppercase text-[#555]"
-                  style={{ fontFamily: "'Barlow', sans-serif" }}
-                >
-                  Address Type
-                </span>
+              {/* Address Type toggle */}
+              <div className="flex flex-col gap-2">
+                <span className={labelClass}>Address Type</span>
                 <div className="flex gap-2">
                   <TypeBtn
-                    label="HOME"
+                    label="Home"
                     value="home"
+                    icon="ri-home-4-line"
                     current={formData.addressType}
                     onClick={(v) =>
                       setFormData({ ...formData, addressType: v })
                     }
                   />
                   <TypeBtn
-                    label="WORK"
+                    label="Work"
                     value="work"
+                    icon="ri-briefcase-line"
                     current={formData.addressType}
                     onClick={(v) =>
                       setFormData({ ...formData, addressType: v })
                     }
                   />
                   <TypeBtn
-                    label="OTHER"
+                    label="Other"
                     value="other"
+                    icon="ri-map-pin-line"
                     current={formData.addressType}
                     onClick={(v) =>
                       setFormData({ ...formData, addressType: v })
@@ -266,96 +246,26 @@ const CreateProfile = () => {
             </div>
           </section>
 
-          {/* ── Save CTA ── */}
+          {/* Save CTA */}
           <button
-            onClick={() => {
-              navigate("/user/profile")
-            }}
             type="submit"
-            className="
-              w-full flex items-center justify-between
-              px-6 py-5
-              bg-white text-black
-              border-0 cursor-pointer
-              hover:bg-[#f5f0e8]
-              active:scale-[0.99]
-              transition-all duration-200
-            "
+            disabled={submitting}
+            className="w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-[#e63b1f] text-white text-sm font-semibold hover:bg-[#ff4f30] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
           >
-            <span
-              className="text-[15px] tracking-[4px]"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              SAVE PROFILE
-            </span>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#000"
-              strokeWidth="1.5"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
+            {submitting ? (
+              <>
+                <i className="ri-loader-4-line animate-spin text-base" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Save Profile
+                <i className="ri-arrow-right-line text-base" />
+              </>
+            )}
           </button>
         </form>
-
-        {/* Watermark */}
-        <div className="text-center overflow-hidden mt-10 select-none">
-          <span
-            className="text-[#111] text-[72px] leading-none"
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              letterSpacing: "8px",
-            }}
-          >
-            SYSTEM
-          </span>
-        </div>
       </div>
-
-      {/* ── Footer ── */}
-      <footer className="bg-[#0d0d0d] border-t border-[#1e1e1e] px-5 py-8">
-        <p
-          className="text-[18px] tracking-[3px] text-white mb-1"
-          style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-        >
-          OUTFIQUE
-        </p>
-        <p className="text-[10px] tracking-[1px] text-[#444] mb-5">
-          © 2026 OUTFIQUE COLLECTIVE
-        </p>
-        <div className="flex flex-wrap gap-5 mb-3">
-          <a
-            href="#"
-            className="text-[10px] tracking-[1.5px] uppercase text-[#444] no-underline hover:text-[#888] transition-colors"
-          >
-            Shipping & Returns
-          </a>
-          <a
-            href="#"
-            className="text-[10px] tracking-[1.5px] uppercase text-[#444] no-underline hover:text-[#888] transition-colors"
-          >
-            Privacy Policy
-          </a>
-        </div>
-        <div className="flex gap-5">
-          <a
-            href="#"
-            className="text-[10px] tracking-[1.5px] uppercase text-[#444] no-underline hover:text-[#888] transition-colors"
-          >
-            Instagram
-          </a>
-          <a
-            href="#"
-            className="text-[10px] tracking-[1.5px] uppercase text-[#888] no-underline hover:text-[#888] transition-colors"
-          >
-            Twitter
-          </a>
-        </div>
-      </footer>
     </div>
   );
 };

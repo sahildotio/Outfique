@@ -4,98 +4,57 @@ import { useAuth } from "../../auth/hooks/useAuth";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { useProfile } from "../hooks/useProfile";
+import { motion, useReducedMotion } from "framer-motion";
+
+const ease = [0.22, 1, 0.36, 1];
 
 /* ─── reusable display field ──────────────────────────────────────── */
 const DataField = ({ label, value }) => (
-  <div className="flex flex-col gap-[6px]">
-    <span
-      className="text-[8px] tracking-[0.22em] uppercase text-[#999] dark:text-[#555]"
-      style={{ fontFamily: "'Barlow', sans-serif" }}
-    >
+  <div className="flex flex-col gap-1.5">
+    <span className="text-xs font-medium tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
       {label}
     </span>
-    <span
-      className="text-[12px] tracking-[0.08em] uppercase text-[#111] dark:text-white"
-      style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 500 }}
-    >
-      {value || "NOT PROVIDED"}
+    <span className="text-sm font-medium text-zinc-900 dark:text-white">
+      {value || "Not provided"}
     </span>
   </div>
 );
 
-/* ─── section heading with red left-bar ──────────────────────────── */
+/* ─── section heading with accent bar ─────────────────────────────── */
 const SectionHeading = ({ children }) => (
-  <div className="flex items-center gap-3 mb-8">
-    <div className="w-[3px] h-[18px] bg-[#e63b1f] flex-shrink-0" />
-    <h2
-      className="tracking-[0.2em] text-[#111] dark:text-white"
-      style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "16px" }}
-    >
-      {children}
-    </h2>
-  </div>
+  <h2 className="flex items-center gap-2.5 text-xs font-bold tracking-[0.2em] uppercase text-zinc-900 dark:text-white mb-6">
+    <span className="w-1 h-4 bg-[#e63b1f] shrink-0" />
+    {children}
+  </h2>
 );
 
 /* ─── dashboard menu card ─────────────────────────────────────────── */
 const MenuCard = ({ title, subtitle, icon, onClick }) => (
-  <div
+  <button
+    type="button"
     onClick={onClick}
-    className="
-      group flex items-start justify-between p-6 cursor-pointer
-      border border-[#e0e0e0] dark:border-[#1e1e1e]
-      hover:border-[#111] dark:hover:border-[#333]
-      bg-white dark:bg-transparent
-      transition-all duration-300
-    "
+    className="group flex items-center justify-between gap-4 p-5 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#141414] hover:border-zinc-300 dark:hover:border-white/20 hover:shadow-sm transition-all duration-200 text-left"
   >
-    <div>
-      <p
-        className="text-[8px] tracking-[0.22em] uppercase text-[#bbb] dark:text-[#444] mb-2"
-        style={{ fontFamily: "'Barlow', sans-serif" }}
-      >
-        Dashboard Section
-      </p>
-      <h3
-        className="text-[#111] dark:text-white mb-2 leading-none"
-        style={{
-          fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: "22px",
-          letterSpacing: "0.06em",
-        }}
-      >
+    <div className="min-w-0">
+      <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
         {title}
       </h3>
-      <p
-        className="text-[10px] tracking-[0.1em] text-[#999] dark:text-[#444] leading-relaxed"
-        style={{ fontFamily: "'Barlow', sans-serif" }}
-      >
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
         {subtitle}
       </p>
     </div>
-
-    {/* icon circle — dark: white-on-dark hover / light: black-on-white hover */}
-    <div
-      className="
-        w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center ml-4
-        border border-[#ddd] dark:border-[#2a2a2a]
-        group-hover:bg-[#111] group-hover:border-[#111]
-        dark:group-hover:bg-white dark:group-hover:border-white
-        transition-all duration-300
-      "
-    >
+    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-zinc-100 dark:bg-white/[0.06] group-hover:bg-[#e63b1f]/10 transition-colors duration-200">
       <i
-        className={`
-          ${icon} text-base transition-colors duration-300
-          text-[#999] dark:text-[#555]
-          group-hover:text-white dark:group-hover:text-black
-        `}
+        className={`${icon} text-base text-zinc-500 dark:text-zinc-400 group-hover:text-[#e63b1f] transition-colors duration-200`}
       />
     </div>
-  </div>
+  </button>
 );
 
-/* ─── main component — all original logic preserved ───────────────── */
+/* ─── main component — all original data logic preserved ──────────── */
 const Profile = () => {
+  const reduceMotion = useReducedMotion();
+
   /* ── original logic: untouched ── */
   const user = useSelector((state) => state.auth.user);
   const { handleLogout } = useAuth();
@@ -121,68 +80,53 @@ const Profile = () => {
       title: "Shopping Cart",
       subtitle: "Manage products ready for checkout",
       icon: "ri-shopping-bag-3-line",
-      path: "/cart",
+      path: "/checkout/cart",
     },
     {
       title: "Wishlist",
       subtitle: "Your saved luxury selections",
       icon: "ri-heart-3-line",
-      path: `/user/style-list`,
-    },
-    {
-      title: "Security",
-      subtitle: "Password & account settings",
-      icon: "ri-shield-keyhole-line",
-      path: "/security",
+      path: `/wishlist`,
     },
   ];
   /* ── end original logic ── */
 
-  const nameParts = (profileData?.fullName || user?.name || "MEMBER")
-    .toUpperCase()
-    .split(" ");
+  const displayName = profileData?.fullName || user?.name || "Member";
 
   return (
-    <div
-      className="min-h-screen bg-[#f7f7f7] dark:bg-[#0a0a0a] text-[#111] dark:text-white"
-      style={{ fontFamily: "'Barlow', sans-serif" }}
-    >
-      {/* ── HERO — giant stacked name ─────────────────────────────── */}
-      <section className="px-5 md:px-10 lg:px-16 pt-8 pb-0">
-        <p
-          className="text-[9px] tracking-[0.28em] uppercase text-[#aaa] dark:text-[#555] mb-4"
-          style={{ fontFamily: "'Barlow', sans-serif" }}
+    <div className="min-h-screen bg-white dark:bg-[#0d0d0d] text-zinc-900 dark:text-white transition-colors">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        {/* Hero */}
+        <motion.div
+          initial={reduceMotion ? {} : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease }}
+          className="mb-12"
         >
-          LUXURY ACCOUNT
-        </p>
+          <span className="text-xs font-medium tracking-[0.15em] uppercase text-zinc-500 dark:text-zinc-400">
+            My Account
+          </span>
+          <h1 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">
+            Hi, {displayName}
+          </h1>
+          {user?.email && (
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              {user.email}
+            </p>
+          )}
+          <div className="mt-6 h-px bg-zinc-200 dark:bg-white/10" />
+        </motion.div>
 
-        <div className="overflow-hidden">
-          {nameParts.map((part, i) => (
-            <div
-              key={i}
-              className="select-none leading-[0.88] text-[#111] dark:text-white"
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: "clamp(64px, 20vw, 150px)",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {part}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── DIVIDER ───────────────────────────────────────────────── */}
-      <div className="h-px bg-[#e0e0e0] dark:bg-[#1e1e1e] mx-5 md:mx-10 lg:mx-16 mt-12 mb-12" />
-
-      {/* ── PERSONAL IDENTITY + REGISTERED ADDRESS ────────────────── */}
-      <section className="px-5 md:px-10 lg:px-16 mb-14">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12 lg:gap-16">
-          {/* Personal Identity */}
+        {/* Personal Identity + Registered Address */}
+        <motion.section
+          initial={reduceMotion ? {} : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease, delay: 0.05 }}
+          className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10 lg:gap-14 mb-14"
+        >
           <div>
             <SectionHeading>Personal Identity</SectionHeading>
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-6">
               <DataField label="Email Address" value={user?.email} />
               <DataField label="Phone Number" value={profileData?.contact} />
               <DataField
@@ -196,10 +140,9 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Registered Address */}
           <div>
             <SectionHeading>Registered Address</SectionHeading>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
               <DataField
                 label="House No / Name"
                 value={
@@ -222,239 +165,58 @@ const Profile = () => {
               <DataField label="Country" value={profileData?.country} />
             </div>
           </div>
-        </div>
-      </section>
+        </motion.section>
 
-      {/* ── DIVIDER ───────────────────────────────────────────────── */}
-      <div className="h-px bg-[#e0e0e0] dark:bg-[#1e1e1e] mx-5 md:mx-10 lg:mx-16 mb-14" />
+        <div className="h-px bg-zinc-200 dark:bg-white/10 mb-14" />
 
-      {/* ── PURCHASE ARCHIVE CTA ──────────────────────────────────── */}
-      <section className="px-5 md:px-10 lg:px-16 mb-14">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-          <div>
-            <h2
-              className="leading-none mb-3 text-[#111] dark:text-white"
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: "clamp(34px, 8vw, 60px)",
-                letterSpacing: "0.02em",
-              }}
-            >
-              PURCHASE ARCHIVE
-            </h2>
-            <p
-              className="text-[9px] tracking-[0.2em] uppercase text-[#999] dark:text-[#555]"
-              style={{ fontFamily: "'Barlow', sans-serif" }}
-            >
-              REVIEW YOUR CURATED ACQUISITIONS FROM THE SEASONAL ARCHIVES.
-            </p>
+        {/* Menu cards */}
+        <motion.section
+          initial={reduceMotion ? {} : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease, delay: 0.1 }}
+          className="mb-14"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+            {profileMenus.map((menu, index) => (
+              <MenuCard
+                key={index}
+                title={menu.title}
+                subtitle={menu.subtitle}
+                icon={menu.icon}
+                onClick={() => navigate(menu.path)}
+              />
+            ))}
           </div>
+        </motion.section>
 
-          <button
-            onClick={() => navigate("/user/orders")}
-            className="flex items-center gap-3 flex-shrink-0 bg-transparent border-0 cursor-pointer group"
-          >
-            <span
-              className="
-                text-[9px] tracking-[0.28em] uppercase
-                text-[#999] dark:text-[#555]
-                group-hover:text-[#111] dark:group-hover:text-white
-                transition-colors duration-200
-              "
-              style={{ fontFamily: "'Barlow', sans-serif" }}
-            >
-              VIEW ALL ORDERS
-            </span>
-            <div
-              className="
-                w-9 h-9 rounded-full flex items-center justify-center
-                border border-[#ddd] dark:border-[#2a2a2a]
-                group-hover:bg-[#111] group-hover:border-[#111]
-                dark:group-hover:bg-white dark:group-hover:border-white
-                transition-all duration-200
-              "
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <line
-                  x1="5"
-                  y1="12"
-                  x2="19"
-                  y2="12"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <polyline
-                  points="12 5 19 12 12 19"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-              </svg>
-            </div>
-          </button>
-        </div>
-      </section>
-
-      {/* ── DASHBOARD MENU CARDS ──────────────────────────────────── */}
-      <section className="px-5 md:px-10 lg:px-16 mb-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {profileMenus.map((menu, index) => (
-            <MenuCard
-              key={index}
-              title={menu.title}
-              subtitle={menu.subtitle}
-              icon={menu.icon}
-              onClick={() => navigate(menu.path)}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* ── ACTIONS: EDIT + LOGOUT ────────────────────────────────── */}
-      <section className="px-5 md:px-10 lg:px-16 mb-24">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Edit Profile */}
+        {/* Actions: Edit + Logout */}
+        <motion.section
+          initial={reduceMotion ? {} : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease, delay: 0.15 }}
+          className="flex flex-col sm:flex-row gap-3"
+        >
           <button
             onClick={() => navigate(`/create-profile/${userid}`)}
-            className="
-              flex items-center justify-between
-              px-6 py-5 min-w-[220px] border-0 cursor-pointer
-              bg-[#111] dark:bg-white
-              text-white dark:text-black
-              hover:bg-[#333] dark:hover:bg-[#f5f0e8]
-              active:scale-[0.99] transition-all duration-200
-            "
+            className="flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-[#e63b1f] text-white text-sm font-semibold hover:bg-[#ff4f30] active:scale-[0.99] transition-all duration-200"
           >
-            <span
-              className="text-[14px] tracking-[4px]"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              EDIT PROFILE
-            </span>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="ml-6"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
+            <i className="ri-pencil-line text-base" />
+            Edit Profile
           </button>
 
-          {/* Logout */}
           <button
             onClick={() => {
               handleLogout();
               toast.success("Logout Successfully", { icon: "✓" });
               setTimeout(() => navigate("/"), 1200);
             }}
-            className="
-              flex items-center justify-between
-              px-6 py-5 min-w-[180px] cursor-pointer
-              bg-transparent
-              text-[#e63b1f]
-              border border-[#e63b1f]/40
-              hover:bg-[#e63b1f]/8 hover:border-[#e63b1f]
-              active:scale-[0.99] transition-all duration-200
-            "
+            className="flex items-center justify-center gap-2 h-12 px-6 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-rose-600 dark:hover:text-rose-400 active:scale-[0.99] transition-all duration-200"
           >
-            <span
-              className="text-[14px] tracking-[4px]"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              LOGOUT
-            </span>
-            <i className="ri-logout-box-r-line text-[#e63b1f]/60 ml-6 text-base" />
+            <i className="ri-logout-box-r-line text-base" />
+            Logout
           </button>
-        </div>
-      </section>
-
-      {/* ── FOOTER ────────────────────────────────────────────────── */}
-      <footer
-        className="
-          border-t px-5 md:px-10 lg:px-16 pt-12 pb-10
-          bg-[#efefef] dark:bg-[#0d0d0d]
-          border-[#e0e0e0] dark:border-[#1e1e1e]
-        "
-      >
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 mb-12">
-          {/* brand */}
-          <div className="max-w-[260px]">
-            <p
-              className="mb-3 text-[#111] dark:text-white"
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: "22px",
-                letterSpacing: "3px",
-              }}
-            >
-              OUTFIQUE
-            </p>
-            <p
-              className="text-[9px] tracking-[0.18em] uppercase text-[#aaa] dark:text-[#444] leading-relaxed"
-              style={{ fontFamily: "'Barlow', sans-serif" }}
-            >
-              CURATING THE ESSENTIALS OF MODERN IDENTITY THROUGH BRUTALIST
-              ARCHITECTURE AND EDITORIAL MINIMALISM.
-            </p>
-          </div>
-
-          {/* footer nav */}
-          <div className="flex gap-12 sm:gap-20">
-            <div className="flex flex-col gap-4">
-              {["Shipping & Returns", "Privacy Policy", "Terms of Service"].map(
-                (link) => (
-                  <a
-                    key={link}
-                    href="#"
-                    className="
-                    text-[9px] tracking-[0.18em] uppercase no-underline transition-colors duration-200
-                    text-[#aaa] dark:text-[#555]
-                    hover:text-[#111] dark:hover:text-white
-                  "
-                    style={{ fontFamily: "'Barlow', sans-serif" }}
-                  >
-                    {link}
-                  </a>
-                ),
-              )}
-            </div>
-            <div className="flex flex-col gap-4">
-              {["Instagram", "Twitter", "Archive"].map((link) => (
-                <a
-                  key={link}
-                  href="#"
-                  className="
-                    text-[9px] tracking-[0.18em] uppercase no-underline transition-colors duration-200
-                    text-[#aaa] dark:text-[#555]
-                    hover:text-[#111] dark:hover:text-white
-                  "
-                  style={{ fontFamily: "'Barlow', sans-serif" }}
-                >
-                  {link}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="
-            flex items-center justify-between pt-6
-            border-t border-[#ddd] dark:border-[#1a1a1a]
-          "
-        >
-          <p
-            className="text-[9px] tracking-[0.18em] uppercase text-[#ccc] dark:text-[#333]"
-            style={{ fontFamily: "'Barlow', sans-serif" }}
-          >
-            © 2026 OUTFIQUE COLLECTIVE
-          </p>
-        </div>
-      </footer>
+        </motion.section>
+      </div>
     </div>
   );
 };

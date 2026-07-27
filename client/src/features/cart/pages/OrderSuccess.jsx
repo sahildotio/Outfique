@@ -1,78 +1,161 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router";
+import { motion, useReducedMotion } from "framer-motion";
+
+// Shared with SellerOrder.jsx / SellerOrderDetail.jsx — worth lifting into
+// one file (e.g. sellerUi.js) once a third page needs the same tokens.
+const easeOut = [0.22, 1, 0.36, 1];
+const easeLuxury = [0.76, 0, 0.24, 1];
+const BRAND = "#e63b1f";
+const EMERALD = "#10b981";
+
+const container = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.09, delayChildren: 0.25 },
+  },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: easeOut } },
+};
+const fadeUpReduced = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.4 } },
+};
 
 const OrderSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
 
   const queryParams = new URLSearchParams(location.search);
   const orderId = queryParams.get("order_id");
 
+  const item = reduceMotion ? fadeUpReduced : fadeUp;
+
   return (
-    <div className="min-h-screen bg-[#f6f2eb] text-[#1c1c1c] flex items-center justify-center">
-      <div className="max-w-2xl w-full bg-[#f8f6f2] border border-[#ddd3c5] p-10 text-center rounded-xl shadow-sm">
-        {/* Success Icon */}
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-100">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-8 h-8 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+    <div className="min-h-screen bg-white dark:bg-[#0d0d0d] text-zinc-900 dark:text-white transition-colors duration-300 flex items-center justify-center px-6 py-10">
+      <motion.div
+        initial={
+          reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.98 }
+        }
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: easeOut }}
+        className="max-w-lg w-full rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#141414] p-8 sm:p-10 text-center"
+      >
+        <motion.div variants={container} initial="hidden" animate="show">
+          {/* Success Icon */}
+          <motion.div variants={item} className="flex justify-center mb-6">
+            <motion.div
+              initial={
+                reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.4 }
+              }
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{
+                duration: 0.6,
+                ease: easeLuxury,
+                delay: 0.15,
+              }}
+              className="w-16 h-16 flex items-center justify-center rounded-full"
+              style={{ backgroundColor: `${EMERALD}1A` }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-        </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-8 h-8"
+                style={{ color: EMERALD }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <motion.path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                  initial={reduceMotion ? { pathLength: 1 } : { pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.5, ease: easeOut, delay: 0.5 }}
+                />
+              </svg>
+            </motion.div>
+          </motion.div>
 
-        {/* Heading */}
-        <h1 className="text-3xl md:text-4xl font-light mb-3">
-          Order Confirmed
-        </h1>
-
-        <p className="text-[#6f6658] mb-6 text-sm tracking-wide">
-          Thank you for your purchase. Your order has been successfully placed.
-        </p>
-
-        {/* Divider */}
-        <div className="w-14 h-px bg-[#c8b89a] mx-auto mb-6" />
-
-        {/* Order ID */}
-        <div className="mb-6">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8a7f6e] mb-2">
-            Order ID
-          </p>
-          <p className="text-lg font-semibold break-all">{orderId}</p>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex flex-col md:flex-row gap-3 justify-center">
-          <button
-            onClick={() => navigate("/")}
-            className="px-6 py-3 bg-[#1c1c1c] text-white text-xs uppercase tracking-[0.25em] hover:bg-[#333] transition-all"
+          {/* Heading */}
+          <motion.h1
+            variants={item}
+            className="text-2xl md:text-3xl font-semibold tracking-tight mb-2"
           >
-            Continue Shopping
-          </button>
+            Order Confirmed
+          </motion.h1>
 
-          <button
-            onClick={() => navigate("/view-orders")}
-            className="px-6 py-3 border border-[#1c1c1c] text-[#1c1c1c] text-xs uppercase tracking-[0.25em] hover:bg-[#eeeeee] transition-all"
+          <motion.p
+            variants={item}
+            className="text-sm text-zinc-500 dark:text-zinc-400 mb-6"
           >
-            View Orders
-          </button>
-        </div>
+            Thank you for your purchase. Your order has been successfully
+            placed.
+          </motion.p>
 
-        {/* Footer Note */}
-        <p className="text-xs text-[#8a7f6e] mt-6">
-          A confirmation email has been sent to your registered email.
-        </p>
-      </div>
+          {/* Divider */}
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: "2.5rem" }}
+            transition={{ duration: 0.5, ease: easeOut, delay: 0.5 }}
+            className="h-px mx-auto mb-6"
+            style={{ backgroundColor: BRAND }}
+          />
+
+          {/* Order ID */}
+          <motion.div
+            variants={item}
+            className="mb-6 rounded-xl bg-zinc-50 dark:bg-white/[0.04] border border-zinc-100 dark:border-white/[0.06] py-4 px-5"
+          >
+            <p className="text-xs font-medium tracking-[0.15em] uppercase text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Order ID
+            </p>
+            <p className="text-base font-semibold text-zinc-900 dark:text-white break-all">
+              {orderId}
+            </p>
+          </motion.div>
+
+          {/* Buttons */}
+          <motion.div
+            variants={item}
+            className="flex flex-col sm:flex-row gap-3 justify-center"
+          >
+            <motion.button
+              whileHover={reduceMotion ? {} : { y: -2 }}
+              whileTap={reduceMotion ? {} : { scale: 0.97 }}
+              transition={{ duration: 0.2, ease: easeLuxury }}
+              onClick={() => navigate("/")}
+              className="cursor-pointer rounded-xl px-6 py-3 text-sm font-medium text-white transition-colors duration-300"
+              style={{ backgroundColor: BRAND }}
+            >
+              Continue Shopping
+            </motion.button>
+
+            <motion.button
+              whileHover={reduceMotion ? {} : { y: -2 }}
+              whileTap={reduceMotion ? {} : { scale: 0.97 }}
+              transition={{ duration: 0.2, ease: easeLuxury }}
+              onClick={() => navigate("/view-orders")}
+              className="cursor-pointer rounded-xl px-6 py-3 text-sm font-medium border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white transition-colors duration-300 hover:bg-zinc-50 dark:hover:bg-white/[0.06]"
+            >
+              View Orders
+            </motion.button>
+          </motion.div>
+
+          {/* Footer Note */}
+          <motion.p
+            variants={item}
+            className="text-xs text-zinc-400 dark:text-zinc-500 mt-6"
+          >
+            A confirmation email has been sent to your registered email.
+          </motion.p>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

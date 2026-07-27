@@ -351,7 +351,6 @@ const reviewOrderController = async (req, res) => {
 };
 
 const getSellerDashboardController = async (req, res) => {
-  try {
     const sellerId = new mongoose.Types.ObjectId(req.user._id);
 
     // ---------------- Products ----------------
@@ -641,12 +640,6 @@ const getSellerDashboardController = async (req, res) => {
         topProducts,
       },
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
 };
 
 export {

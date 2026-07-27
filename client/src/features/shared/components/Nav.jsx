@@ -13,12 +13,9 @@ import SearchAutocomplete from "./Searchautocomplete ";
 
 // seller sub-nav — adjust paths to match your actual routes
 const SELLER_MORE_LINKS = [
-  { icon: "ri-archive-2-line", label: "Inventory", path: "/seller/inventory" },
+  { icon: "ri-line-chart-line", label: "Analytics", path: "/seller/analytics" },
   { icon: "ri-file-list-3-line", label: "Orders", path: "/seller/orders" },
-  { icon: "ri-group-line", label: "Customers", path: "/seller/customers" },
   { icon: "ri-star-line", label: "Reviews", path: "/seller/reviews" },
-  { icon: "ri-bank-card-line", label: "Payments / Payouts", path: "/seller/payments" },
-  { icon: "ri-refund-2-line", label: "Returns & Refunds", path: "/seller/returns" },
 ];
 
 // ─── Theme Toggle ─────────────────────────────────────────────────────────────
@@ -203,7 +200,7 @@ const Navbar = () => {
 
           {/* Brand */}
           <Link
-            to="/"
+            to={isSeller ? "/seller/analytics" : "/"}
             className="flex-shrink-0 leading-none select-none"
             style={{
               fontFamily: "'Bebas Neue', 'Anton', sans-serif",
@@ -314,7 +311,13 @@ const Navbar = () => {
                     <DropdownItem
                       icon="ri-user-3-line"
                       label="Profile"
-                      onClick={() => navigate("/profile")}
+                      onClick={() => navigate("/user/profile")}
+                    />
+
+                    <DropdownItem
+                      icon="ri-file-list-3-line"
+                      label="View Orders"
+                      onClick={() => navigate("/view-orders")}
                     />
 
                     {!isSeller && (
@@ -466,11 +469,18 @@ const Navbar = () => {
             />
 
             {user && (
-              <SidebarItem
-                icon="ri-user-3-line"
-                label="Profile"
-                onClick={() => goTo("/profile")}
-              />
+              <>
+                <SidebarItem
+                  icon="ri-user-3-line"
+                  label="Profile"
+                  onClick={() => goTo("/profile")}
+                />
+                <SidebarItem
+                  icon="ri-file-list-3-line"
+                  label="View Orders"
+                  onClick={() => goTo("/view-orders")}
+                />
+              </>
             )}
 
             {user && !isSeller && (

@@ -1,8 +1,8 @@
+import ThemeToggle from "@/features/theme/components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { useAuth } from "../hooks/useAuth";
 import ContinueWithGoogle from "../components/ContinueWithGoogle";
-import ThemeToggle from "@/features/theme/components/ThemeToggle";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -49,10 +49,10 @@ export default function Register() {
       isSeller: formData.isSeller,
     });
 
-    if (user.role === "buyer") {
+    if (user.role == "buyer") {
       navigate("/");
-    } else if (user.role === "seller") {
-      navigate("/seller/dashboard");
+    } else if (user.role == "seller") {
+      navigate("/seller/analytics");
     }
 
     setError("");

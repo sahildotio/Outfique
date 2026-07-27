@@ -3,16 +3,7 @@ import { useProduct } from "../hooks/useProduct";
 import { useNavigate } from "react-router";
 import { useWishlist } from "@/features/wishlist/hooks/useWishlist";
 
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-// ── Heart / Wishlist Icon ────────────────────────────────────────────────
+// ── Heart / Wishlist Icon ───────────────────────────────────────────
 const HeartIcon = ({ filled }) => (
   <svg
     className="w-5 h-5 transition-all duration-200"
@@ -31,20 +22,6 @@ const HeartIcon = ({ filled }) => (
 
 const formatPrice = (amount) =>
   `₹${Number(amount ?? 0).toLocaleString("en-IN")}`;
-
-const SORT_OPTIONS = [
-  { value: "newest", label: "Newest" },
-  { value: "price_asc", label: "Price: Low to High" },
-  { value: "price_desc", label: "Price: High to Low" },
-];
-
-const DEFAULT_FILTER = {
-  search: "",
-  category: "",
-  minPrice: "",
-  maxPrice: "",
-  sort: "",
-};
 
 const ProductCard = ({ product, wishlisted, onToggleWishlist }) => {
   const image = product?.productImages?.[0]?.url;
@@ -130,133 +107,21 @@ const ProductCardSkeleton = () => (
   </div>
 );
 
-// ── Filter bar ─────────────────────────────────────────────────────────────
-const inputClass =
-  "h-10 rounded-full border-stone-200 dark:border-zinc-800 bg-transparent focus-visible:ring-1 focus-visible:ring-stone-900 dark:focus-visible:ring-white";
-
-const FilterBar = ({ filter, onChange, onClear, categories, hasActiveFilters }) => {
-  return (
-    <div className="mb-8 flex flex-col gap-3">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <Input
-          placeholder="Search products..."
-          value={filter.search}
-          onChange={(e) => onChange({ search: e.target.value })}
-          className={`flex-1 min-w-0 ${inputClass}`}
-        />
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Select
-            value={filter.category || "all"}
-            onValueChange={(value) =>
-              onChange({ category: value === "all" ? "" : value })
-            }
-          >
-            <SelectTrigger className={`w-full sm:w-40 ${inputClass}`}>
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat._id} value={cat._id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              min="0"
-              inputMode="numeric"
-              placeholder="Min ₹"
-              value={filter.minPrice}
-              onChange={(e) => onChange({ minPrice: e.target.value })}
-              className={`w-24 ${inputClass}`}
-            />
-            <span className="text-stone-400 text-xs">to</span>
-            <Input
-              type="number"
-              min="0"
-              inputMode="numeric"
-              placeholder="Max ₹"
-              value={filter.maxPrice}
-              onChange={(e) => onChange({ maxPrice: e.target.value })}
-              className={`w-24 ${inputClass}`}
-            />
-          </div>
-
-          <Select
-            value={filter.sort || "recommended"}
-            onValueChange={(value) =>
-              onChange({ sort: value === "recommended" ? "" : value })
-            }
-          >
-            <SelectTrigger className={`w-full sm:w-44 ${inputClass}`}>
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recommended">Recommended</SelectItem>
-              {SORT_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-xs font-medium uppercase tracking-[0.08em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white underline underline-offset-4 transition-colors"
-            >
-              Clear all
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // ── Product Grid ──────────────────────────────────────────────────────────
 export const Product = ({ products: initialProducts }) => {
   const [products, setProducts] = useState(initialProducts || []);
   const [loading, setLoading] = useState(!initialProducts);
   const [wishlist, setWishlist] = useState({});
-  const [categories, setCategories] = useState([]);
-  const { handleGetAllProducts, handleGetAllCategory } = useProduct();
-
-  const [filter, setFilter] = useState(DEFAULT_FILTER);
-  const [debouncedFilter, setDebouncedFilter] = useState(DEFAULT_FILTER);
+  const { handleGetAllProducts } = useProduct();
 
   // avoid stomping a newer response with a stale, slower one
   const requestIdRef = useRef(0);
 
-  const updateFilter = (patch) => {
-    setFilter((prev) => ({ ...prev, ...patch }));
-  };
-
-  const clearFilters = () => setFilter(DEFAULT_FILTER);
-
-  const hasActiveFilters = Object.entries(filter).some(
-    ([key, value]) => value !== DEFAULT_FILTER[key],
-  );
-
-  // debounce all filter changes (search keystrokes and price typing especially)
-  // before they trigger a network request
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedFilter(filter), 400);
-    return () => clearTimeout(timer);
-  }, [filter]);
-
-  const fetchProducts = async (activeFilter) => {
+  const fetchProducts = async () => {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const res = await handleGetAllProducts(activeFilter);
+      const res = await handleGetAllProducts();
       // ignore this response if a newer request has since been fired
       if (requestId !== requestIdRef.current) return;
       setProducts(res ?? []);
@@ -267,9 +132,9 @@ export const Product = ({ products: initialProducts }) => {
 
   useEffect(() => {
     if (!initialProducts) {
-      fetchProducts(debouncedFilter);
+      fetchProducts();
     }
-  }, [debouncedFilter]);
+  }, []);
 
   useEffect(() => {
     if (initialProducts) {
@@ -277,18 +142,6 @@ export const Product = ({ products: initialProducts }) => {
       setLoading(false);
     }
   }, [initialProducts]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await handleGetAllCategory();
-        setCategories(res || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchCategories();
-  }, []);
 
   const { handleAddWishlist } = useWishlist();
 
@@ -310,16 +163,6 @@ export const Product = ({ products: initialProducts }) => {
 
   return (
     <div className="mx-auto max-w-[1400px] px-3 py-6 sm:px-6 lg:px-12 transition-colors duration-300">
-      {!initialProducts && (
-        <FilterBar
-          filter={filter}
-          onChange={updateFilter}
-          onClear={clearFilters}
-          categories={categories}
-          hasActiveFilters={hasActiveFilters}
-        />
-      )}
-
       <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
         {loading
           ? Array.from({ length: 8 }, (_, i) => <ProductCardSkeleton key={i} />)
@@ -335,9 +178,7 @@ export const Product = ({ products: initialProducts }) => {
 
       {!loading && products.length === 0 && (
         <p className="py-20 text-center text-sm text-gray-500 dark:text-gray-400">
-          {hasActiveFilters
-            ? "No products match your filters."
-            : "No products to show yet."}
+          No products to show yet.
         </p>
       )}
     </div>

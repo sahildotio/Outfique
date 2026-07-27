@@ -1,13 +1,16 @@
-import Category from "@/features/products/components/Category";
+import Address from "@/features/address/page/Address";
+import ResetPassword from "@/features/auth/pages/ResetPassword";
+import ViewAllOrder from "@/features/order/page/Buyer/ViewAllOrder";
+import SellerAnalytics from "@/features/order/page/Seller/SellerAnalytics";
+import SellerOrder from "@/features/order/page/Seller/SellerOrder";
+import SellerOrderDetail from "@/features/order/page/Seller/SellerOrderDetail";
 import CategoryWiseProduct from "@/features/products/pages/CategoryWiseProduct";
 import { createBrowserRouter } from "react-router";
 import Protected from "../features/auth/components/Protected";
 import Login from "../features/auth/pages/Login";
 import Register from "../features/auth/pages/Register";
 import Cart from "../features/cart/pages/Cart";
-import OrderDetails from "../features/cart/pages/OrderDetails";
 import OrderSuccess from "../features/cart/pages/OrderSuccess";
-import Orders from "../features/cart/pages/Orders";
 import CreateProduct from "../features/products/pages/CreateProduct";
 import Dashboard from "../features/products/pages/Dashboard";
 import Home from "../features/products/pages/Home";
@@ -18,10 +21,7 @@ import Profile from "../features/profile/page/Profile";
 import Wishlist from "../features/wishlist/pages/Wishlist";
 import AppLayout from "./AppLayout";
 import NotFound from "./NotFound";
-import ResetPassword from "@/features/auth/pages/ResetPassword";
-import Address from "@/features/address/page/Address";
-import Customer from "@/features/order/page/Customer";
-import SellerOrder from "@/features/order/page/SellerOrder";
+import BuyerOrderDetail from "@/features/order/page/Buyer/BuyerOrderDetail";
 
 export const router = createBrowserRouter([
   {
@@ -63,12 +63,20 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "/seller/customers",
+            path: "/seller/analytics",
             element: (
               <Protected role="seller">
-                <Customer />
+                <SellerAnalytics />
               </Protected>
-            )
+            ),
+          },
+          {
+            path: "/seller/order/:orderid",
+            element: (
+              <Protected role="seller">
+                <SellerOrderDetail />
+              </Protected>
+            ),
           },
           {
             path: "/seller/orders",
@@ -76,10 +84,7 @@ export const router = createBrowserRouter([
               <Protected role="seller">
                 <SellerOrder />
               </Protected>
-            )
-          },
-          {
-            path: "/seller/"
+            ),
           },
           {
             path: "/seller/product/:productId",
@@ -105,9 +110,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "/checkout/address/new",
-        element: <Protected>
-          <Address />
-        </Protected>
+        element: (
+          <Protected>
+            <Address />
+          </Protected>
+        ),
       },
       {
         path: "/order/success",
@@ -118,28 +125,28 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "/view-orders",
-        element: (
-          <Protected>
-            <Orders />
-          </Protected>
-        ),
-      },
-      {
-        path: "/orders/:orderDetailId",
-        element: (
-          <Protected>
-            <OrderDetails />
-          </Protected>
-        ),
-      },
-      {
         path: "/user/profile",
         element: (
           <Protected>
             <Profile />
           </Protected>
         ),
+      },
+      {
+        path: "/view-orders",
+        element: (
+          <Protected>
+            <ViewAllOrder />
+          </Protected>
+        ),
+      },
+      {
+        path: "/orders/:orderid",
+        element: (
+          <Protected>
+            <BuyerOrderDetail />
+          </Protected>  
+        )
       },
       {
         path: "/create-profile/:userid",
